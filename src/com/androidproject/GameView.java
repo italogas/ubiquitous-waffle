@@ -1,5 +1,12 @@
 package com.androidproject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Random;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -24,7 +31,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private Activity activity; // to display Game Over dialog in GUI thread
 	private boolean dialogIsDisplayed = false;
 	// variables for the game loop and tracking statistics
-	//private boolean gameOver; // is the game over?
+	// private boolean gameOver; // is the game over?
 	private double timeLeft; // the amount of time left in seconds
 	public int initialTime = 10; // the amount of time in seconds RAFA
 	private float puckXVelocity; // blocker speed multiplier during game
@@ -35,8 +42,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private int totalDistance;
 	private int actualDistance;
 
-	private int contentViewTop;
-	private int lineWidth; // width of the target and blocker
+	private int contentViewTop; // size of status bar
 	private int screenWidth; // width of the screen
 	private int screenHeight; // height of the screen
 	// constants and variables for managing sounds
@@ -46,11 +52,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private SparseIntArray soundMap; // maps IDs to SoundPool
 	// Paint variables used when drawing each item on the screen
 	private Paint textPaint; // Paint used to draw text
-	private Paint cannonPaint; // Paint used to draw the cannon
-	private Paint blockerPaint; // Paint used to draw the blocker
-	private Paint targetPaint; // Paint used to draw the target
 	private Paint backgroundPaint; // Paint used to clear the drawing area
-
+	Random r = new Random();
+	ArrayList<Effect> Effects = new ArrayList<Effect>();
 	public GameView(Context context, AttributeSet attrs) {
 		super(context, attrs); // call super's constructor
 		// setZOrderOnTop(true);
@@ -66,14 +70,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		soundMap = new SparseIntArray();// <Integer, Integer>(); // create new
 										// HashMap
 		soundMap.put(FIRE, soundPool.load(context, R.raw.cannon_fire, 1));
-		soundMap.put(MARIO,	soundPool.load(context, R.raw.mario, 1));
+		soundMap.put(MARIO, soundPool.load(context, R.raw.mario, 1));
 
 		// construct Paints for drawing text, cannonball, cannon,
 		// blocker and target; these are configured in method onSizeChanged
 		textPaint = new Paint(); // Paint for drawing text
-		cannonPaint = new Paint(); // Paint for drawing the cannon
-		blockerPaint = new Paint(); // Paint for drawing the blocker
-		targetPaint = new Paint(); // Paint for drawing the target
 		backgroundPaint = new Paint(); // Paint for drawing the target
 		puckPos = new Position();
 	} // end CannonView constructor
@@ -87,25 +88,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		puckPos.hw = w > h ? w / 10 : h / 10;
 		// position and rotation
 		puckPos.fx = w / 2;
-		puckPos.fy = h / 2;
+		puckPos.fy = 3 * h / 4;
 		puckPos.fr = 0;
 		backInitialVelocity = h / 100;
 		backVelocity = backInitialVelocity;
 		actualDistance = 0;
-		totalDistance = 30000;
+		totalDistance = 35000;
 
 		screenWidth = w; // store the width
 		screenHeight = h; // store the height
-		lineWidth = w / 24; // target and blocker 1/24 screen width
+		// lineWidth = w / 24; // target and blocker 1/24 screen width
 
 		// configure Paint objects for drawing game elements
 		textPaint.setTextSize(w / 20); // text size 1/20 of screen width
 		textPaint.setARGB(255, 255, 255, 255);
 		textPaint.setAntiAlias(true); // smoothes the text
-		cannonPaint.setStrokeWidth(lineWidth * 1.5f); // set line thickness
-		blockerPaint.setStrokeWidth(lineWidth); // set line thickness
-		// targetPaint.setStrokeWidth(lineWidth); // set line thickness
-		targetPaint.setStrokeWidth(lineWidth * 4); // set line thickness //RAFA
 		backgroundPaint.setColor(Color.WHITE); // set background color
 		backgroundPaint.setColor(Color.TRANSPARENT); // set background color
 		// backgroundPaint.set()Color(Color.WHITE); // set background color
@@ -117,10 +114,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	// reset all the screen elements and start a new game
 	public void newGame() {
 
-		 start();
+		start();
 	} // end method newGame
-	
-	public void start(){
+
+	public void start() {
+
+		int NumOfEffects = r.nextInt((int)(totalDistance<=2500?2:totalDistance/2500f));
+		int NumOfBoosts = r.nextInt(NumOfEffects==0?1:NumOfEffects);
+		
+//		for(int i=0;i<NumOfEffects;i++){
+//if(i<NumOfBoosts)
+//	Effects.add(new Effect(Type.Boost, r.nextInt(100),r.nextInt(totalDistance/1000)*1000));
+//else
+//	Effects.add(new Effect(Type.Harm, r.nextInt(100), r.nextInt(totalDistance/1000)*1000));
+//		}
+//		Collections.sort(Effects);
+		
+		for(int i=1000;i<35000;i+=3000)
+		Effects.add(new Effect(Type.Boost, 50,i));
 		
 		Window window = activity.getWindow();
 		contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT)
@@ -133,6 +144,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		planeBmp = Bitmap.createScaledBitmap(planeBmp, puckPos.hw, puckPos.hw,
 				false);
+
+		FinishLineBmp = Bitmap.createScaledBitmap(FinishLineBmp,
+				screenWidth,FinishLineBmp.getHeight()* screenWidth / FinishLineBmp.getWidth()
+						, false);
 		// puckPos.hw=w>h?w/20:h/20;
 		puckPos.x = puckPos.fx;
 		puckPos.y = puckPos.fy;
@@ -140,6 +155,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		puckXVelocity = 0;// initialBlockerVelocity;
 		puckYVelocity = 0;// initialBlockerVelocity;
 
+		
 		timeLeft = 10; // start the countdown at 10 seconds
 		timeLeft = initialTime; // start the countdown at 10 seconds RAFA
 
@@ -148,7 +164,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		// cannonThread = new CannonThread(getHolder());
 		// cannonThread.start();
 		// } // end if
-
+		Log.v("ei","x"+NumOfEffects);
+		for (Effect ef : Effects) {
+			Log.v("ei",ef.X+"x"+ef.Y);
+		}
 		soundPool.play(soundMap.get(MARIO), 0.5f, 0.5f, 1, 9999, 1f);
 	}
 
@@ -156,21 +175,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private void updatePositions(double elapsedTimeMS) {
 		// double interval = elapsedTimeMS / 1000.0; // convert to seconds
 
-		// puckXVelocity *= 0.991;
-		// puckYVelocity *= 0.991;
-		// puckPos.x += (int) (puckXVelocity * 0.2);
-		// puckPos.y += (int) (puckYVelocity * 0.2);
-		// puckPos.r += Math.abs(puckXVelocity) >= Math.abs(puckYVelocity) ?
-		// Math
-		// .abs(puckXVelocity) : Math.abs(puckYVelocity);
-
 		int offset = 25;
-
-		//
-		// if (puckPos.y - puckPos.hw / 2 < 5)
-		// puckYVelocity *= puckYVelocity > 0 ? 1 : -1;
-		// if (puckPos.y + puckPos.hw / 2 > screenHeight - offset)
-		// puckYVelocity *= puckYVelocity > 0 ? -1 : 1;
 
 		if (puckPos.x - puckPos.hw / 2 < 5 && puckXVelocity < 0
 				|| puckPos.x + puckPos.hw / 2 > screenWidth - offset
@@ -180,30 +185,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			backVelocity = backInitialVelocity;
 		} else {
 
-			// puckPos.x += (int) (puckXVelocity * 0.2);
-			// puckPos.y += (int) (puckYVelocity * 0.2);
-
 			double acceleration = 1.15;
 
 			puckPos.x += (int) (puckXVelocity * acceleration);
 			puckPos.y += (int) (puckYVelocity * acceleration);
 
-			puckPos.r = (int) (360 + puckXVelocity);// > 0 ? 45 :
-													// (Math.abs(puckXVelocity)<0)?0:315;
-			puckPos.r %= 360;
+			puckPos.r = ((int) (360 + puckXVelocity)) % 360;
 
 			backVelocity = (float) (backInitialVelocity * (0.5 + 0.5 * (45 - Math
 					.abs(puckXVelocity)) / 45.0));
 
-			// puckPos.r += Math.abs(puckXVelocity) >= Math.abs(puckYVelocity) ?
-			// Math
-			// .abs(puckXVelocity) : Math.abs(puckYVelocity);
-			// puckPos.r %= 360;
 		}
-
-		// puckXVelocity *= puckXVelocity > 0 ? 1 : -1;
-		// if (puckPos.x + puckPos.hw / 2 > screenWidth - offset)
-		// puckXVelocity *= puckXVelocity > 0 ? -1 : 1;
 
 		if (puckPos.y - puckPos.hw / 2 < 5
 				|| puckPos.y + puckPos.hw / 2 > screenHeight - offset
@@ -213,20 +205,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			// soundPool.play(soundMap.get(CANNON_SOUND_ID), 1, 1, 1, 0, 1f);
 
 		}
+Log.v("pq",totalDistance+"a"+ actualDistance );
+		if (totalDistance - actualDistance < 0) {
+			cannonThread.setRunning(false);
+		}
 
-		// Log.v("pos", puckPos.y + "y" + puckPos.x + "x" + puckPos.hw + "hw");
-
-		// // if the target hit the top or bottom, reverse direction
-		// if (target.start.y < 0 || target.end.y > screenHeight)
-		// targetVelocity *= -1;
-		// timeLeft -= interval; // subtract from time left
-		// if the timer reached zero
-		if (timeLeft <= 0.0) {
-			timeLeft = 0.0;
-			//gameOver = true; // the game is over
-			// cannonThread.setRunning(false);
-			// showGameOverDialog(R.string.lose); // show the losing dialog
-		} // end if
 	} // end method updatePositions
 
 	public void movePuck(MotionEvent event1, MotionEvent event2,
@@ -251,12 +234,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void movePuck(float accel) {
 
-		// Log.v("ui",Math.abs(touchPoint1.x-puckPos.x)+" "+puckPos.hw/2+" "+Math.abs(touchPoint1.y-puckPos.y)+" "+puckPos.hw/2);
-		// if(Math.abs(puckXVelocity)>10)
-		// puckXVelocity*=(float) (accel*1.05);
-		// else
 		puckXVelocity = (float) (accel * 25.0 * 0.2);
-		// puckYVelocity=(float) (velocityY/30.0);
 
 	}
 
@@ -266,111 +244,80 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	int inc = 0;
 	Bitmap tempPlaneBmp;
 	Bitmap planeBmp;
+	Bitmap FinishLineBmp = BitmapFactory.decodeResource(getResources(),
+			R.drawable.finishline);
 
 	public void drawGameElements(Canvas canvas) {
-		// clear the background
-		// canvas.drawColor(Color.TRANSPARENT, Mode.CLEAR);
-		// canvas.drawColor(0, Mode.CLEAR);
-		// canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(),
-		// backgroundPaint);
-		// Drawable d = getResources().getDrawable(R.drawable.hockey_arena);
-		// d.setBounds(0, 0, screenWidth, screenHeight);
-		// d.draw(canvas);
 
 		canvas.drawBitmap(backg, 0, (float) inc, null);
 		canvas.drawBitmap(backg, 0, (float) -backg.getHeight() + inc, null);
-		inc += backVelocity;
-		actualDistance += backVelocity;
-		if (inc > backg.getHeight())
-			inc = 0;
-		// mybmp = BitmapFactory.decodeResource(getResources(),
-		// R.drawable.hockey_arena);
-		//
-		// mybmp=Bitmap.createScaledBitmap(mybmp, screenWidth, screenHeight,
-		// true);
-		// canvas.drawBitmap(mybmp,0,0, null);
-
-		// display time remaining
-		// canvas.drawText(
-		// getResources().getString(R.string.time_remaining_format,
-		// timeLeft), 30, 50, textPaint);
-		// canvas.drawText(""+timeLeft, 30, 50, textPaint);
-		// if (cannonballOnScreen)
-		// canvas.drawCircle(cannonball.x, cannonball.y, cannonballRadius,
-		// cannonballPaint);
-
+		
 		Matrix matrix = new Matrix();
-
-		matrix.setRotate(puckPos.r);// , (float)(puckPos.hw/2.0),
-									// (float)(puckPos.hw/2.0));
-
+		matrix.setRotate(puckPos.r);
 		tempPlaneBmp = Bitmap.createBitmap(planeBmp, 0, 0, puckPos.hw,
 				puckPos.hw, matrix, false);
+		
+		inc += backVelocity;
+		actualDistance += backVelocity;
+		int poisonedDistance=actualDistance+puckPos.y-(tempPlaneBmp.getHeight() / 2);
+		if (inc > backg.getHeight())
+			inc = 0;
 
-		// //////////////
-		// Canvas canv= new Canvas(mybmp);
-		// canv.rotate(puckPos.r, (float)(puckPos.hw/2.0),
-		// (float)(puckPos.hw/2.0));
-		//
+		
+		
+		
+		
+		
+		//if (totalDistance - actualDistance < puckPos.y) {
+			if (totalDistance < poisonedDistance) { // FinishLine must appear in the screen
+			// tempPlaneBmp = Bitmap.createBitmap(FinishLineBmp, 0, 0,
+			// screenWidth-20,
+			// screenWidth/FinishLineBmp.getWidth()*FinishLineBmp.getHeight());
 
-		// mybmp=Bitmap.createBitmap(mybmp,
-		// (int)((Math.sqrt(2*puckPos.hw*puckPos.hw/4)-puckPos.hw/2)*(puckPos.r%45/45.0)),
-		// (int)((Math.sqrt(2*puckPos.hw*puckPos.hw/4)-puckPos.hw/2)*(puckPos.r%45/45.0)),
-		// puckPos.hw, puckPos.hw);
-		// //////////////
-
-		// matrix.setScale(puckPos.hw/222f, puckPos.hw/170f,0,0);
-
-		// matrix.setScale(puckPos.hw, puckPos.hw);
-
-		// matrix.postRotate(puckPos.r);
-		//
-		// matrix.postTranslate((float) (puckPos.x - mybmp.getWidth() / 2),
-		// (float) (puckPos.y - mybmp.getHeight() / 2));
-
-		// float[] values = new float[9];
-		// matrix.getValues(values);
-		// globalX = values[Matrix.MTRANS_X];
-		// globalY = values[Matrix.MTRANS_Y];
-		// width = values[Matrix.MSCALE_X]*imageWidth;
-		// height = values[Matrix.MSCALE_Y]*imageHeight;
-
-		// mybmp = Bitmap.createBitmap(mybmp, 0,
-		// 0,(int)(values[Matrix.MSCALE_X]*222) ,(int)
-		// (values[Matrix.MSCALE_Y]*170),
-		// matrix, false);
-		//
-		// canvas.drawBitmap(mybmp,0,0,null);
+			canvas.drawBitmap(FinishLineBmp, 0,
+					//(float) (puckPos.y - totalDistance + actualDistance),
+					(float) (poisonedDistance - totalDistance ),
+					null);
+			Log.v("fim","A"+actualDistance+"y"+puckPos.y);
+		}
+		
+		
+		
+		
+		
+		
+		//////////
+	
+		for (Iterator<Effect> iterator = Effects.iterator(); iterator.hasNext();) {
+			Effect ef = iterator.next();
+			if(ef.Y<(poisonedDistance-screenHeight)){// remove if it's no longer visible TODO include size of image here (or not)
+				iterator.remove();
+				//Log.v("eit","rem"+ef.X+"x"+ef.Y+"a"+actualDistance);
+			}
+			else if(ef.Y<poisonedDistance){
+				canvas.drawBitmap(tempPlaneBmp,
+						(float)(ef.X*(screenWidth-tempPlaneBmp.getWidth())/100f),
+						(float) ((poisonedDistance-ef.Y)), null);
+				//Log.v("eit","des"+ef.X+"x"+ef.Y+"a"+actualDistance);
+			}
+		}
+		
+		
+		
+		
+		
+		////////////////
+		
 
 		canvas.drawBitmap(tempPlaneBmp,
 				(float) (puckPos.x - tempPlaneBmp.getWidth() / 2),
 				(float) (puckPos.y - tempPlaneBmp.getHeight() / 2), null);
 
 		canvas.drawText(
-				getResources().getString(R.string.distance, actualDistance,
-						totalDistance), 30, contentViewTop, textPaint);
+				getResources().getString(R.string.distance,
+						actualDistance / 1000.0, totalDistance / 1000.0), 30,
+				contentViewTop, textPaint);
 
-		// draw the cannon barrel
-		// canvas.drawLine(0, screenHeight / 2, barrelEnd.x, barrelEnd.y,
-		// cannonPaint);
-		// // draw the cannon base
-		// canvas.drawCircle(0, (int) screenHeight / 2, (int) cannonBaseRadius,
-		// cannonPaint);
-		// draw the blocker
-		// canvas.drawLine(blocker.start.x, blocker.start.y, blocker.end.x,
-		// blocker.end.y, blockerPaint);
-		// canvas.drawLine(blocker.start.x, blocker.start.y, blocker.end.x,
-		// blocker.end.y, blockerPaint);
-
-		// Point currentPoint = new Point(); // start of current target section
-		// // initialize curPoint to the starting point of the target
-		// currentPoint.x = target.start.x;
-		// currentPoint.y = target.start.y;
-		// // draw the target
-
-		// if(i>3)
-		// currentPoint.x -= lineWidth*4; //RAFA
-		// end for
 	} // end method drawGameElements
 
 	// display an AlertDialog when the game ends
@@ -406,20 +353,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	public void stopGame() {
 
 		Log.v("aa", "stopGame");
-		if (cannonThread != null)
+		if (cannonThread != null&&getHolder().getSurface().isValid())
 			cannonThread.setRunning(false);
-		soundPool.release();
+		Log.v("aa", cannonThread.getRunning() + "stopGame");
+		soundPool.autoPause();
 	} // end method stopGame
 		// resumes the game
 
 	public void resumeGame() {
 
 		Log.v("aa", "resumeGame");
-		if (cannonThread != null) {
-			start();
-			cannonThread.setRunning(true);
-
-		}
+		// if (cannonThread != null) {
+		soundPool.autoResume();
+		cannonThread = new CannonThread(getHolder());
+		cannonThread.start();
+		// }
 
 	} // end method stopGame
 
@@ -480,11 +428,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			// changes running state
 
 		public void setRunning(boolean running) {
-			if (!threadIsRunning && running) {
-
-				threadIsRunning = running;
-				function();
-			}
+			// if (!threadIsRunning && running) {
+			//
+			// threadIsRunning = running;
+			// function();
+			// }
 
 			threadIsRunning = running;
 
@@ -500,26 +448,39 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 			Canvas canvas = null; // used for drawing
 			long previousFrameTime = System.currentTimeMillis();
+			boolean go = true;
 			while (threadIsRunning) {
-				try {
-					canvas = surfaceHolder.lockCanvas(null);
-					// lock the surfaceHolder for drawing
-					synchronized (surfaceHolder) {
-						long currentTime = System.currentTimeMillis();
-						double elapsedTimeMS = currentTime - previousFrameTime;
-						// totalElapsedTime += elapsedTimeMS / 1000.00;
-						updatePositions(elapsedTimeMS); // update game state
-						drawGameElements(canvas); // draw
-						previousFrameTime = currentTime; // update previous time
-					} // end synchronized block
-				} // end try
-				catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					if (canvas != null)
-						surfaceHolder.unlockCanvasAndPost(canvas);
-				} // end finally
-			} // end while
+				if (go) {
+					go = false;
+					try {
+						canvas = surfaceHolder.lockCanvas(null);
+						// lock the surfaceHolder for drawing
+						synchronized (surfaceHolder) {
+
+							//Log.v("aa", "TA" + threadIsRunning + "" + go);
+							if (threadIsRunning) {
+								long currentTime = System.currentTimeMillis();
+								double elapsedTimeMS = currentTime
+										- previousFrameTime;
+								// totalElapsedTime += elapsedTimeMS / 1000.00;
+								updatePositions(elapsedTimeMS); // update game
+																// state
+								drawGameElements(canvas); // draw
+								previousFrameTime = currentTime; // update
+																	// previous
+																	// time
+							}
+							go = true;
+						} // end synchronized block
+					} // end try
+					catch (Exception e) {
+						e.printStackTrace();
+					} finally {
+						if (canvas != null)
+							surfaceHolder.unlockCanvasAndPost(canvas);
+					} // end finally
+				} // end while
+			}
 		}
 
 		@Override
@@ -530,11 +491,28 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	class Position {
 		public int fx, fy, fr, x, y, hw, r; // r = rotation
-
-		public Position() {
-
+		public Position() {		}
+	}
+	enum Type{
+		Boost,
+		Harm
+	}
+	class Effect implements Comparable<Effect>{
+		public Type Type;
+		/**
+		 * X is a value between 0 and 100, which is a position between the left and right of the screen
+		 */
+		public int X;
+		public int Y;
+		public Effect(Type type, int x, int y){
+			Type=type;
+			X=x>100?100:x<0?0:x;
+			Y=y;
 		}
-
+		@Override
+		public int compareTo(Effect arg0) {
+			return ((Integer)Y).compareTo(arg0.Y);
+		}
 	}
 
 }
