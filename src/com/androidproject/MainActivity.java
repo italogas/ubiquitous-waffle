@@ -1,5 +1,7 @@
 package com.androidproject;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -8,20 +10,28 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.Interpolator;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 public class MainActivity extends Activity implements SensorEventListener {
 
 	private GestureDetector gestureDetector; // listens for double taps
-	private GameView gameView; // custom view to display the game
+	private GameView gameView = null; // custom view to display the game
 
 	AlertDialog ad;
 
@@ -34,16 +44,41 @@ public class MainActivity extends Activity implements SensorEventListener {
 
 	public Vibrator v;
 
-	ImageView background,background2,background3;
-	
-	Animation anim,anim2,anim3;
+	ImageView background, background2, background3;
+
+	Animation upfront, downfront, frontup, frontdown;
+
+	RelativeLayout LayGame;
+	RelativeLayout LayMainMenu;
+	boolean gameLoaded = false;
+	ArrayList<Screen> Screens = new ArrayList<Screen>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		// get the CannonView
+		Button btnPlay = (Button) findViewById(R.id.btnPlay);
+		LayGame = (RelativeLayout) findViewById(R.id.LayGame);
+		LayMainMenu = (RelativeLayout) findViewById(R.id.LayMainMenu);
 		gameView = (GameView) findViewById(R.id.gameView);
+		Screens.add(new Screen(Name.MainMenu, LayMainMenu));
+
+		frontdown = AnimationUtils.loadAnimation(this, R.anim.frontdown);
+		downfront = AnimationUtils.loadAnimation(this, R.anim.downfront);
+		frontup = AnimationUtils.loadAnimation(this, R.anim.frontup);
+		upfront = AnimationUtils.loadAnimation(this, R.anim.upfront);
+		frontdown.setInterpolator(interp);
+		downfront.setInterpolator(interp);
+		frontup.setInterpolator(interp);
+		upfront.setInterpolator(interp);
+		frontdown.setFillAfter(true);
+		downfront.setFillAfter(true);
+		frontup.setFillAfter(true);
+		upfront.setFillAfter(true);
+
+		// setContentView(R.layout.activity_main);
+		// get the CannonView
+		// gameView = (GameView) findViewById(R.id.gameView);
 		// initialize the GestureDetector
 		gestureDetector = new GestureDetector(this, gestureListener);
 		// allow volume keys to set game volume
@@ -53,16 +88,89 @@ public class MainActivity extends Activity implements SensorEventListener {
 		if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
 			// success! we have an accelerometer
 
-			accelerometer = sensorManager
-					.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-			sensorManager.registerListener(this, accelerometer,
-					SensorManager.SENSOR_DELAY_GAME);// SENSOR_DELAY_NORMAL
+			accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+			sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);// SENSOR_DELAY_NORMAL
 			vibrateThreshold = accelerometer.getMaximumRange() / 2;
 		} else {
 			// fail! we dont have an accelerometer!
 		}
 
-		Log.v("aa","oncreate");
+		Log.v("aa", "oncreate");
+
+		btnPlay.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// LayGame.setVisibility(View.VISIBLE);
+				// LayMainMenu.setVisibility(View.INVISIBLE);
+
+				GoTo(Name.Game);
+			}
+		});
+
+	}
+
+	public void GoTo(Name whichScreen) {
+
+		switch (whichScreen) {
+		case Game:
+			LayGame.startAnimation(downfront);
+			LayMainMenu.startAnimation(frontup);
+			Screens.add(new Screen(whichScreen, LayGame));
+
+			// gameLoaded = true;
+			gameView.newGame();
+			break;
+		case MainMenu:
+			LayMainMenu.startAnimation(downfront);
+			LayGame.startAnimation(frontup);
+			break;
+		case Back:
+			if (Screens.size() < 2) {
+				finish(); // Or ask if want to finish
+			} else {
+				// GoingBack
+				RelativeLayout actual = Screens.get(Screens.size() - 1).Layout;
+				if (Screens.get(Screens.size() - 1).name == Name.Game && GoingBack == 0) {
+
+					GoingBack += 1;
+
+					Toast.makeText(getApplicationContext(), "Press again to exit the game", Toast.LENGTH_SHORT).show();
+					(new Thread() {
+						@Override
+						public void run() {
+							try {
+								Thread.sleep(2000); // As I am using LENGTH_LONG
+													// in Toast
+								GoingBack--;
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					}).start();
+				} else {
+					if (Screens.get(Screens.size() - 1).name == Name.Game) {
+						if (gameView != null)
+							if (gameView.Updater != null)
+								// if
+								// (gameView.surfaceWorking&&gameView.cannonThread.getRunning())
+								gameView.stopGame();
+					}
+
+					actual.startAnimation(frontdown);
+					Screens.remove(Screens.size() - 1);
+					RelativeLayout before = Screens.get(Screens.size() - 1).Layout;
+					before.startAnimation(upfront);
+
+				}
+
+			}
+
+			break;
+		default:
+			break;
+		}
+
 	}
 
 	@Override
@@ -72,45 +180,70 @@ public class MainActivity extends Activity implements SensorEventListener {
 		return true;
 	}
 
+	int GoingBack = 0;
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+			// do something on back.
+			GoTo(Name.Back);
+			return true;
+		}
+
+		return super.onKeyDown(keyCode, event);
+	}
+
 	// onResume() register the accelerometer for listening the events
 	protected void onResume() {
 		super.onResume();
-//		sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-//		
-//		sensorManager.registerListener(this, accelerometer,
-//				SensorManager.SENSOR_DELAY_GAME);
-		gameView.resumeGame(); // terminates the game
-		Log.v("aa","onresume");
+		// sensorManager = (SensorManager)
+		// getSystemService(Context.SENSOR_SERVICE);
+		//
+		// sensorManager.registerListener(this, accelerometer,
+		// SensorManager.SENSOR_DELAY_GAME);
+		if (gameView != null)
+			if (gameView.Updater != null)
+				// if
+				// (gameView.surfaceWorking&&gameView.cannonThread.getRunning())
+				gameView.resumeGame(); // resumes the game
+
+		Log.v("aa", "onresume");
 	}
 
 	// when the app is pushed to the background, pause it
 	@Override
 	public void onPause() {
 		super.onPause(); // call the super method
-		Log.v("aa","onpause");
-		
-		
-		gameView.stopGame(); // terminates the game
-//		sensorManager.unregisterListener(this);
+		Log.v("aa", "onpause");
+
+		if (gameView != null)
+			if (gameView.Updater != null)
+				// if
+				// (gameView.surfaceWorking&&gameView.cannonThread.getRunning())
+				gameView.stopGame(); // terminates the game
+
+		// sensorManager.unregisterListener(this);
 	} // end method onPause
 		// release resources
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		Log.v("aa","ondestroy");
-		gameView.releaseResources();
+		Log.v("aa", "ondestroy");
+		if (gameView != null)
+			if (gameView.Updater != null)
+				// if
+				// (gameView.surfaceWorking&&gameView.cannonThread.getRunning())
+				// {
+				gameView.releaseResources();
 	} // end method onDestroy
 
-	
-	
-		// listens for touch events sent to the GestureDetector
+	// listens for touch events sent to the GestureDetector
 	SimpleOnGestureListener gestureListener = new SimpleOnGestureListener() {
 		@Override
-		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
-				float velocityY) {
-//			Log.v("ae", velocityX + "aqui" + velocityY);
-//			gameView.movePuck(e1, e2, velocityX, velocityY);
+		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+			// Log.v("ae", velocityX + "aqui" + velocityY);
+			// gameView.movePuck(e1, e2, velocityX, velocityY);
 			return true; // the event was handled
 		};
 
@@ -130,13 +263,55 @@ public class MainActivity extends Activity implements SensorEventListener {
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
-		deltaX = -event.values[0];
-		if (Math.abs(deltaX) > 10.0)
-			deltaX = deltaX > 0 ? 9 : -9;
-			gameView.movePuck(deltaX);
+		if (gameView != null) {
+			if (gameView.Updater != null)
+				if (gameView.surfaceWorking && gameView.Updater.getRunning()) {
+					deltaX = -event.values[0];
+					if (Math.abs(deltaX) > 10.0)
+						deltaX = deltaX > 0 ? 9 : -9;
+					gameView.movePlane(deltaX);
 
+				}
+		}
 	}
 
-    
+	Animation.AnimationListener AnimList = new Animation.AnimationListener() {
+
+		@Override
+		public void onAnimationStart(Animation animation) {
+
+		}
+
+		@Override
+		public void onAnimationRepeat(Animation animation) {
+
+		}
+
+		@Override
+		public void onAnimationEnd(Animation animation) {
+
+		}
+	};
+	Interpolator interp = new Interpolator() {
+
+		@Override
+		public float getInterpolation(float arg0) {
+			return arg0;
+		}
+	};
+
+	enum Name {
+		MainMenu, Game, Back
+	}
+
+	class Screen {
+		Name name;
+		RelativeLayout Layout;
+
+		public Screen(Name name, RelativeLayout Layout) {
+			this.name = name;
+			this.Layout = Layout;
+		}
+	}
 
 }

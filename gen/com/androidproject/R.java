@@ -9,8 +9,10 @@ package com.androidproject;
 
 public final class R {
     public static final class anim {
-        public static final int updown=0x7f040000;
-        public static final int updown2=0x7f040001;
+        public static final int downfront=0x7f040000;
+        public static final int frontdown=0x7f040001;
+        public static final int frontup=0x7f040002;
+        public static final int upfront=0x7f040003;
     }
     public static final class attr {
     }
@@ -31,11 +33,15 @@ public final class R {
         public static final int plane=0x7f020003;
     }
     public static final class id {
-        public static final int action_settings=0x7f0a0001;
-        public static final int gameView=0x7f0a0000;
+        public static final int LayGame=0x7f0a0000;
+        public static final int LayMainMenu=0x7f0a0002;
+        public static final int action_settings=0x7f0a0004;
+        public static final int btnPlay=0x7f0a0003;
+        public static final int gameView=0x7f0a0001;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
+        public static final int main=0x7f030001;
     }
     public static final class menu {
         public static final int main=0x7f090000;
