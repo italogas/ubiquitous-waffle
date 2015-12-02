@@ -42,6 +42,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private float backVelocity; // blocker speed multiplier during game
 	private float backInitialVelocity; // blocker speed multiplier during game
 	private Position planePos;
+	private Position infoPos;
+	private Position backgPos;
 	private int totalDistance;
 	private int actualDistance;
 
@@ -58,7 +60,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private Paint backgroundPaint; // Paint used to clear the drawing area
 	
 	Bitmap thebmp = BitmapFactory.decodeResource(getResources(), R.drawable.grass);
-	int inc = 0;
+	//int inc = 0;
 	Bitmap tempPlaneBmp;
 	Bitmap planeBmp;
 	Bitmap FinishLineBmp = BitmapFactory.decodeResource(getResources(), R.drawable.finishline);
@@ -69,6 +71,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private boolean do321 = false;
 	private double doing321 = 4000;
+	private int doing321MaxSize;
 
 	public GameView(Context context, AttributeSet attrs) {
 		super(context, attrs); // call super's constructor
@@ -93,7 +96,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		textPaint = new Paint(); // Paint for drawing text
 		backgroundPaint = new Paint(); // Paint for drawing the target
 		planePos = new Position();
-		
+		infoPos= new Position();
+		backgPos= new Position();
 		
 		
 		
@@ -113,14 +117,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		planePos.fx = w / 2;
 		planePos.fy = 3 * h / 4;
 		planePos.fr = 0;
-		backInitialVelocity = h / 100;
-		
-
-		screenWidth = w; // store the width
-		screenHeight = h; // store the height
+		backInitialVelocity = 25;//h / 100;
 		
 		Window window = activity.getWindow();
 		contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
+		//Log.v("window", contentViewTop+"");
+		
+		infoPos.x=w/100;
+		infoPos.y=contentViewTop==0?h/15:contentViewTop;
+
+
+		backgPos.fy=h / 100;
+		
+		screenWidth = w; // store the width
+		screenHeight = h; // store the height
+		
+		doing321MaxSize=(int)(w*0.5f);
 		
 		// lineWidth = w / 24; // target and blocker 1/24 screen width
 
@@ -155,21 +167,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		int NumOfEffects = r.nextInt((int) (totalDistance <= 2500 ? 2 : 1 + totalDistance / 2500f));
 		int NumOfBoosts = r.nextInt(NumOfEffects == 0 ? 1 : NumOfEffects);
 
-		// for(int i=0;i<NumOfEffects;i++){
-		// if(i<NumOfBoosts)
-		// Effects.add(new Effect(Type.Boost,
-		// r.nextInt(100),r.nextInt(totalDistance/1000)*1000));
-		// else
-		// Effects.add(new Effect(Type.Harm, r.nextInt(100),
-		// r.nextInt(totalDistance/1000)*1000));
-		// }
-		// Collections.sort(Effects);
+		 for(int i=0;i<NumOfEffects;i++){
+		 if(i<NumOfBoosts)
+		 Effects.add(new Effect(Type.Boost,
+		 r.nextInt(100),r.nextInt(totalDistance/1000)*1000));
+		 else
+		 Effects.add(new Effect(Type.Harm, r.nextInt(100),
+		 r.nextInt(totalDistance/1000)*1000));
+		 }
+		 Collections.sort(Effects);
 
-		for (int i = 0; i < 35000; i += 3000)
-			Effects.add(new Effect(Type.Boost, 50, i));
+//		for (int i = 0; i < 35000; i += 3000)
+//			Effects.add(new Effect(Type.Boost, 50, i));
 		
 		
-		inc = 0;
+		//inc = 0;
+		backgPos.y=0;
 		
 		// puckPos.hw=w>h?w/20:h/20;
 		planePos.x = planePos.fx;
@@ -209,7 +222,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		Updater.setRunning(true);
 
 	}
-
+	double sum=0;
+	double qnts=0;
 	
 
 	// called repeatedly by the CannonThread to update game elements
@@ -218,6 +232,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		// double interval = elapsedTimeMS / 1000.0; // convert to seconds
 		if (!gameOver) {
 			int offset = 25;
+			qnts+=1;
+			sum=elapsedTimeMS+sum;
+			Log.v("time", (sum)/qnts+"q"+qnts);
 
 			if (planePos.x - planePos.hw / 2 < 5 && puckXVelocity < 0
 					|| planePos.x + planePos.hw / 2 > screenWidth - offset && puckXVelocity > 0) {
@@ -229,17 +246,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				double acceleration = 1.15;
 
 				planePos.x += (int) (puckXVelocity * acceleration);
-				planePos.y += (int) (puckYVelocity * acceleration);
+				//planePos.y += (int) (puckYVelocity * acceleration);
 
 				planePos.r = ((int) (360 + puckXVelocity)) % 360;
 
 				backVelocity = (float) (backInitialVelocity * (0.5 + 0.5 * (45 - Math.abs(puckXVelocity)) / 45.0));
 
 			}
-			inc += backVelocity;
+			//inc += backVelocity;
+			backgPos.y+=backgPos.fy;
 			actualDistance += backVelocity;
-			if (inc > backg.getHeight())
-				inc = 0;
+			if (backgPos.y >= backg.getHeight())
+				backgPos.y = 0;
 			// if (puckPos.y - puckPos.hw / 2 < 5
 			// || puckPos.y + puckPos.hw / 2 > screenHeight - offset
 			// || puckPos.x - puckPos.hw / 2 < 5
@@ -263,8 +281,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void drawGameElements(Canvas canvas) {
 
-		canvas.drawBitmap(backg, 0, (float) inc, null);
-		canvas.drawBitmap(backg, 0, (float) -backg.getHeight() + inc, null);
+		canvas.drawBitmap(backg, 0, (float) backgPos.y, null);
+		canvas.drawBitmap(backg, 0, (float) -backg.getHeight() + backgPos.y, null);
 
 		Matrix matrix = new Matrix();
 		matrix.setRotate(planePos.r);
@@ -307,7 +325,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				(float) (planePos.y - tempPlaneBmp.getHeight() / 2), null);
 
 		canvas.drawText(getResources().getString(R.string.distance, actualDistance / 1000.0, totalDistance / 1000.0),
-				30, contentViewTop, textPaint);
+				infoPos.x, infoPos.y, textPaint);
+		//30, contentViewTop==0?50:contentViewTop, textPaint);
+		
 
 	} // end method drawGameElements
 
@@ -315,10 +335,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		drawGameElements(canvas);
 		doing321 -= elapsedTimeMS * 2;
 		String text = ((Integer) ((int) (doing321 / 1000))).toString();
-		text = text == "0" ? "GO!" : text;
+		text = text.equals("0") ? "GO!" : text;
 		Paint textp = new Paint();
 		textp.setARGB(255, 0, 0, 255);
-		textp.setTextSize((float) ((doing321 / 1000) % 1) * 450f);
+		textp.setTextSize((float) ((doing321 / 1000) % 1) * doing321MaxSize);
 		textp.setAntiAlias(true); // smoothes the text
 		Rect bounds = new Rect();
 		textp.getTextBounds(text, 0, text.length(), bounds);
@@ -330,23 +350,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		}
 	}
 
-	public void movePlane(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
-
-		Point touchPoint1 = new Point((int) event1.getX(), (int) event1.getY());
-		Point touchPoint2 = new Point((int) event2.getX(), (int) event2.getY());
-		Log.v("ui", Math.abs(touchPoint1.x - planePos.x) + " " + planePos.hw / 2 + " "
-				+ Math.abs(touchPoint1.y - planePos.y) + " " + planePos.hw / 2);
-
-		if (Math.abs(touchPoint1.x - planePos.x) < planePos.hw
-				&& Math.abs(touchPoint1.y - planePos.y) < planePos.hw / 2 * 3
-				|| Math.abs(touchPoint2.x - planePos.x) < planePos.hw
-						&& Math.abs(touchPoint2.y - planePos.y) < planePos.hw / 2 * 3) {
-			puckXVelocity = (float) (velocityX / 30.0);
-			puckYVelocity = (float) (velocityY / 30.0);
-
-		}
-
-	}
+//	public void movePlane(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
+//
+//		Point touchPoint1 = new Point((int) event1.getX(), (int) event1.getY());
+//		Point touchPoint2 = new Point((int) event2.getX(), (int) event2.getY());
+//		Log.v("ui", Math.abs(touchPoint1.x - planePos.x) + " " + planePos.hw / 2 + " "
+//				+ Math.abs(touchPoint1.y - planePos.y) + " " + planePos.hw / 2);
+//
+//		if (Math.abs(touchPoint1.x - planePos.x) < planePos.hw
+//				&& Math.abs(touchPoint1.y - planePos.y) < planePos.hw / 2 * 3
+//				|| Math.abs(touchPoint2.x - planePos.x) < planePos.hw
+//						&& Math.abs(touchPoint2.y - planePos.y) < planePos.hw / 2 * 3) {
+//			puckXVelocity = (float) (velocityX / 30.0);
+//			puckYVelocity = (float) (velocityY / 30.0);
+//
+//		}
+//
+//	}
 
 	public void movePlane(float accel) {
 
@@ -441,7 +461,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		// end while
 	} // end method surfaceDestroyed
 
-	class RefreshHandler extends Handler {
+	 class RefreshHandler extends Handler {
 		public RefreshHandler(SurfaceHolder holder) {
 			surfaceHolder = holder;
 		}
@@ -452,7 +472,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		public void setRunning(boolean running) {
 			if (running && !threadIsRunning) {
 				threadIsRunning = running;
-				Updater.sleep(0);
+				this.sleep(0);
 
 			}
 			threadIsRunning = running;

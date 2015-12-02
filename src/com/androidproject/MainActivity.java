@@ -140,8 +140,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 						@Override
 						public void run() {
 							try {
-								Thread.sleep(2000); // As I am using LENGTH_LONG
-													// in Toast
+								Thread.sleep(2000);
 								GoingBack--;
 							} catch (Exception e) {
 								e.printStackTrace();
@@ -275,23 +274,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 		}
 	}
 
-	Animation.AnimationListener AnimList = new Animation.AnimationListener() {
 
-		@Override
-		public void onAnimationStart(Animation animation) {
-
-		}
-
-		@Override
-		public void onAnimationRepeat(Animation animation) {
-
-		}
-
-		@Override
-		public void onAnimationEnd(Animation animation) {
-
-		}
-	};
 	Interpolator interp = new Interpolator() {
 
 		@Override
