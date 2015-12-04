@@ -1,9 +1,16 @@
 package com.androidproject;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+
+import com.androidproject.bd.GameRoundData;
+import com.androidproject.bd.GameRoundsDataSource;
+import com.androidproject.bd.GameRoundDBSQLiteHelper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ListActivity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -20,11 +27,14 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -52,6 +62,11 @@ public class MainActivity extends Activity implements SensorEventListener {
 	RelativeLayout LayMainMenu;
 	boolean gameLoaded = false;
 	ArrayList<Screen> Screens = new ArrayList<Screen>();
+	
+	private GameRoundsDataSource gameRoundsDataSource;
+	private ListView listView;
+	private Button btnDB;
+	private ArrayAdapter<GameRoundData> adapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +120,31 @@ public class MainActivity extends Activity implements SensorEventListener {
 				// LayMainMenu.setVisibility(View.INVISIBLE);
 
 				GoTo(Name.Game);
+			}
+		});
+		
+		//get database access point
+		gameRoundsDataSource = new GameRoundsDataSource(getApplicationContext());
+		try {
+			gameRoundsDataSource.open();
+		} catch (SQLException e) {
+			Log.e("DATABASE ERROR", e.getMessage());
+		}
+		
+		//get all registered records in example file 
+		List<GameRoundData> allRecords = gameRoundsDataSource.getAllRecords();
+		
+		adapter = new ArrayAdapter<GameRoundData>(
+				this, android.R.layout.simple_list_item_1, allRecords);
+		
+		listView = (ListView) findViewById(R.id.listView);
+		
+		btnDB = (Button) findViewById(R.id.btnDBQuery);
+		btnDB.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				listView.setAdapter(adapter);
+				listView.setVisibility(ListView.VISIBLE);
 			}
 		});
 
