@@ -16,153 +16,137 @@
 
 package com.androidproject.bluetooth;
 
-
-import com.androidproject.GameActivity;
 import com.androidproject.R;
-import com.androidproject.R.id;
-import com.androidproject.R.layout;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.OnItemClickListener;
 
 /**
- * A simple list  that displays Bluetooth devices that are in
- * discoverable mode. This can be used as a gamelobby where players can see
- * available servers and pick the one they wish to connect to.
+ * A simple list that displays Bluetooth devices that are in discoverable mode. This can be used as a gamelobby where players can see available servers and pick the one they wish to connect to.
  */
 
 public class ServerList {
-    public ServerList(Context context, ListView lv) {
+	public ServerList(Context context, ListView lv) {
 		super();
 		this.context = context;
-		this.lv=lv;
+		this.lv = lv;
 	}
-    ListView lv;
+
+	ListView lv;
 	public static String EXTRA_SELECTED_ADDRESS = "btaddress";
-public Thread waitForChoose;
-    private BluetoothAdapter myBt;
-private Context context;
+	public Thread waitForChoose;
+	private BluetoothAdapter myBt;
+	private Context context;
 
-    public ArrayAdapter<String> arrayAdapter;
-    
-    
+	public ArrayAdapter<String> arrayAdapter;
 
-    private BroadcastReceiver myReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Parcelable btParcel = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            BluetoothDevice btDevice = (BluetoothDevice) btParcel;
-            arrayAdapter.add(btDevice.getName() + " - " + btDevice.getAddress());
-           // arrayAdapter.notifyDataSetChanged();
-            
-            Toast.makeText(context, btDevice.getName() + " - " + btDevice.getAddress(), Toast.LENGTH_LONG).show();
-           Log.v("tag",btDevice.getName() + " - " + btDevice.getAddress());
-        }
-    };
+	private BroadcastReceiver myReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Parcelable btParcel = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			BluetoothDevice btDevice = (BluetoothDevice) btParcel;
+			arrayAdapter.add(btDevice.getName() + " - " + btDevice.getAddress());
+			// arrayAdapter.notifyDataSetChanged();
 
-    @TargetApi(23)
+			Toast.makeText(context, btDevice.getName() + " - " + btDevice.getAddress(), Toast.LENGTH_LONG).show();
+			Log.v("tag", btDevice.getName() + " - " + btDevice.getAddress());
+		}
+	};
+
+	@TargetApi(23)
 	@SuppressLint("NewApi")
-    protected void onCreate(Bundle savedInstanceState) {
-		//setContentView(R.layout.activity_db);
-        
-        
-   
-       
-    }
-    public int Result=Activity.RESULT_CANCELED;
-    public Intent ResultIntent=null;
-public void Resume(){
-	  arrayAdapter = new ArrayAdapter<String>(context, R.layout.text);
-    // ListView lv = self.getListView();
-     //lv = (ListView)findViewById(R.id.listView);
-     lv.setAdapter(arrayAdapter);
-     Log.v("oi","oi0");
-     lv.setOnItemClickListener(new OnItemClickListener() {
-         @Override
+	protected void onCreate(Bundle savedInstanceState) {
+		// setContentView(R.layout.activity_db);
+
+	}
+
+	public int Result = Activity.RESULT_CANCELED;
+	public Intent ResultIntent = null;
+
+	public void Resume() {
+		arrayAdapter = new ArrayAdapter<String>(context, R.layout.text);
+		// ListView lv = self.getListView();
+		// lv = (ListView)findViewById(R.id.listView);
+		lv.setAdapter(arrayAdapter);
+		Log.v("oi", "oi0");
+		lv.setOnItemClickListener(new OnItemClickListener() {
+			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 
-             Log.v("oi","oi2");
-             myBt.cancelDiscovery(); // Cancel BT discovery explicitly so
-             // that connections can go through
-             String btDeviceInfo = ((TextView) arg1).getText().toString();
-             String btHardwareAddress = btDeviceInfo.substring(btDeviceInfo.length() - 17);
-             Intent i = new Intent();
-             i.putExtra(EXTRA_SELECTED_ADDRESS, btHardwareAddress);
-             //self.setResult(Activity.RESULT_OK, i);
-             ResultIntent=i;
-              device=btHardwareAddress;
+				Log.v("oi", "oi2");
+				myBt.cancelDiscovery(); // Cancel BT discovery explicitly so
+				// that connections can go through
+				String btDeviceInfo = ((TextView) arg1).getText().toString();
+				String btHardwareAddress = btDeviceInfo.substring(btDeviceInfo.length() - 17);
+				Intent i = new Intent();
+				i.putExtra(EXTRA_SELECTED_ADDRESS, btHardwareAddress);
+				// self.setResult(Activity.RESULT_OK, i);
+				ResultIntent = i;
+				device = btHardwareAddress;
 
-				Log.v("oq",device);
-             Result=Activity.RESULT_OK;
-             //finish();
-             //onPause();
-             //onDestroy();
-             arg1.setSelected(!arg1.isSelected());
-             finish();
-         }
-     });
-     onResume();
+				Log.v("oq", device);
+				Result = Activity.RESULT_OK;
+				// finish();
+				// onPause();
+				// onDestroy();
+				arg1.setSelected(!arg1.isSelected());
+				finish();
+			}
+		});
+		onResume();
 
-     //waitForChoose.start();
-     
-     myBt = BluetoothAdapter.getDefaultAdapter();
-     myBt.startDiscovery();
-     Log.v("oi","oi1");
-    // self.setResult(Activity.RESULT_CANCELED);
-}
-public String device;
-public void finish(){
-	
-	onPause();
-	onDestroy();
-}
-  
-    protected void onResume() {
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        context.registerReceiver(myReceiver, filter);
-    }
+		// waitForChoose.start();
 
+		myBt = BluetoothAdapter.getDefaultAdapter();
+		myBt.startDiscovery();
+		Log.v("oi", "oi1");
+		// self.setResult(Activity.RESULT_CANCELED);
+	}
 
-    protected void onPause() {
-    	try {
+	public String device;
 
-        	context.unregisterReceiver(myReceiver);
+	public void finish() {
+
+		onPause();
+		onDestroy();
+	}
+
+	protected void onResume() {
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		context.registerReceiver(myReceiver, filter);
+	}
+
+	protected void onPause() {
+		try {
+
+			context.unregisterReceiver(myReceiver);
 		} catch (Exception e) {
-			// TODO: handle exception
+			e.printStackTrace();
 		}
-    }
+	}
 
-
-    protected void onDestroy() {
-        if (myBt != null) {
-            myBt.cancelDiscovery(); // Ensure that we don't leave discovery
-            // running by accident
-        }
-    }
-    
-  
+	protected void onDestroy() {
+		if (myBt != null) {
+			myBt.cancelDiscovery(); // Ensure that we don't leave discovery
+			// running by accident
+		}
+	}
 
 }

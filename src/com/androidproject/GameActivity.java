@@ -44,6 +44,7 @@ import android.view.View;
 import android.view.WindowManager.BadTokenException;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -157,7 +158,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 		}
 
 		gameLay.setVisibility(View.INVISIBLE);
-		newgameLay.setVisibility(View.VISIBLE);
+//		newgameLay.setVisibility(View.VISIBLE);
 
 		self = this;
 
@@ -170,6 +171,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 			public void onClick(View v) {
 				chooseLay.setVisibility(View.GONE);
 				enterLay.setVisibility(View.GONE);
+				createLay.setVisibility(View.VISIBLE);
 				mConnection = new Connection(self, serviceReadyListener);
 			}
 		});
@@ -179,6 +181,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 			public void onClick(View v) {
 				chooseLay.setVisibility(View.GONE);
 				createLay.setVisibility(View.GONE);
+				enterLay.setVisibility(View.VISIBLE);
 				mType = CLIENT;
 				mConnection = new Connection(self, serviceReadyListener);
 
@@ -190,6 +193,14 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 			@Override
 			public void onClick(View v) {
+				
+				// Check if no view has focus:
+				View view = self.getCurrentFocus();
+				if (view != null) {  
+				    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+				    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+				}
+				
 				if (gameView.Players.size() > 1) {
 					// mConnection = new Connection(self, serviceReadyListener);
 					// newgameLay.setVisibility(View.INVISIBLE);
@@ -274,6 +285,11 @@ public class GameActivity extends Activity implements SensorEventListener {
 		anim.setFillAfter(true);
 
 		newgameLay.startAnimation(anim);
+		newgameLay.setVisibility(View.GONE);
+		chooseLay.setVisibility(View.GONE);
+		createLay.setVisibility(View.GONE);
+		enterLay.setVisibility(View.GONE);
+		newgameLay.setEnabled(false);
 		gameView.newGame();
 
 		gameLay.setVisibility(View.VISIBLE);

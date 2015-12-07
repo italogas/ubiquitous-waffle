@@ -19,7 +19,8 @@
         android:icon="@drawable/playership1_blue"
         android:label="@string/app_name"
         android:largeHeap="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+            android:screenOrientation="portrait" >
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -47,44 +48,23 @@
             android:name=".bluetooth.StartDiscoverableModeActivity"
             android:label="Enable discoverable mode"
             android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.Translucent" >
-        </activity>
-        <activity
-            android:name=".bluetooth.AirHockey"
-            android:label="Air Hockey: Click, Link, Compete"
-            android:screenOrientation="portrait" >
-        </activity>
-        <activity
-            android:name=".bluetooth.ServerListActivity"
-            android:label="Pick your server" >
+            android:theme="@android:style/Theme.Translucent">
         </activity>
         <activity
             android:name=".DBActivity"
             android:label="@string/title_activity_db"
-            android:parentActivityName=".MainActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="MainActivity" />
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".GameActivity"
             android:label="@string/title_activity_game"
-            android:parentActivityName=".MainActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="MainActivity" />
-        </activity>
-        <activity
-            android:name=".TestActivity"
-            android:label="@string/title_activity_test"
-            android:parentActivityName=".MainActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="MainActivity" />
+            android:windowSoftInputMode="stateAlwaysHidden|adjustNothing"
+            android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".ChooseActivity"
-            android:label="@string/title_activity_choose" >
+            android:label="@string/title_activity_choose"
+            android:screenOrientation="portrait" >
         </activity>
     </application>
 

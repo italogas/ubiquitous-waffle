@@ -18,14 +18,13 @@ package com.androidproject.bluetooth;
 
 
 import com.androidproject.R;
-import com.androidproject.R.string;
 
 import android.app.Activity;
 import android.app.AlertDialog.Builder;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 

@@ -1,6 +1,5 @@
 package com.androidproject;
 
-import com.androidproject.bluetooth.AirHockey;
 
 import android.app.Activity;
 import android.content.Intent;
