@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">AndroidProject</string>
+    <string name="app_name">Starship Racing</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-
-    
     <string name="results_format">Shots fired: %1$d\nTotal time: %2$.1f</string>
     <string name="reset_game">Reset Game</string>
     <string name="win">You win!</string>
     <string name="lose">You lose!</string>
     <string name="time_remaining_format">Time remaining: %.1f seconds</string>
-    
-    
     <string name="distance">Distance: %1$.1f/%2$.1f km</string>
-    
-    
+    <string name="title_activity_db">DBActivity</string>
+    <string name="title_activity_game">GameActivity</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="DISCOVERABLE_MODE_NOT_ENABLED">Discoverable Mode Not Enabled</string>
+    <string name="WARNING_MESSAGE">Warning: Discoverable mode has not been enabled.\n\nDevices which have not connected to your device before will not even know that it exists.\n\nWould you like to enable discoverable mode?</string>
+    <string name="title_activity_choose">ChooseActivity</string>
+    <string name="number_of_players">Number of players: %d</string>
+
 </resources>

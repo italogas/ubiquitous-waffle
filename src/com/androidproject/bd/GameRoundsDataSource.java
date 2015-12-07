@@ -47,7 +47,7 @@ public class GameRoundsDataSource {
 	
 	public void open() throws SQLException {
 		database = gameRoundDBHelper.getWritableDatabase();
-		addRecords();
+		//addRecords();
 	}
 	
 	public void close() {

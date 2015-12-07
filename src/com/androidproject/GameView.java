@@ -17,6 +17,7 @@ import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -26,6 +27,16 @@ import android.view.SurfaceView;
 import android.view.Window;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
+	// Color of ship
+	public static final String BLUE = "0";
+	public static final String GREEN = "1";
+	public static final String ORANGE = "2";
+	public static final String RED = "3";
+	// Ship
+	public static final String FIRST = "1";
+	public static final String SECOND = "2";
+	public static final String THIRD = "3";
+
 	public RefreshHandler Updater;
 	private Activity activity; // to display Game Over dialog in GUI thread
 	// variables for the game loop and tracking statistics
@@ -38,7 +49,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private Position planePos;
 	private Position infoPos;
 	private Position backgPos;
-	private int totalDistance;
+	public int totalDistance = 0;
 	private int actualDistance;
 
 	private int contentViewTop; // size of status bar
@@ -67,9 +78,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private boolean do321 = false;
 	private double doing321 = 4000;
-	private int doing321MaxSize;
-	private int poisonedDistance; // a distance that was poisoned by the
-									// position of the plane
+	private float doing321MaxSize;
+	// a distance that was poisoned by the position of the plane
+	private int poisonedDistance;
+	private long initialtime;
+	private boolean sizeview = false;
+
+	ArrayList<Player> Players = new ArrayList<Player>();
+	ArrayList<Integer> shipsandcolors = new ArrayList<Integer>();
 
 	public GameView(Context context, AttributeSet attrs) {
 		super(context, attrs); // call super's constructor
@@ -97,6 +113,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		infoPos = new Position();
 		backgPos = new Position();
 
+		shipsandcolors.add(R.drawable.playership1_blue);
+		shipsandcolors.add(R.drawable.playership1_green);
+		shipsandcolors.add(R.drawable.playership1_orange);
+		shipsandcolors.add(R.drawable.playership1_red);
+
+		shipsandcolors.add(R.drawable.playership2_blue);
+		shipsandcolors.add(R.drawable.playership2_green);
+		shipsandcolors.add(R.drawable.playership2_orange);
+		shipsandcolors.add(R.drawable.playership2_red);
+
+		shipsandcolors.add(R.drawable.playership3_blue);
+		shipsandcolors.add(R.drawable.playership3_green);
+		shipsandcolors.add(R.drawable.playership3_orange);
+		shipsandcolors.add(R.drawable.playership3_red);
+
 	} // end CannonView constructor
 
 	// called by surfaceChanged when the size of the SurfaceView changes,
@@ -104,7 +135,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
-		Log.v("init", "onsizechanged");
+		Log.v("init", "onsizechanged" + w + " " + h);
 		// size
 		planePos.hw = w > h ? w / 10 : h / 10;
 		// position and rotation
@@ -118,13 +149,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		infoPos.x = w / 100;
 		infoPos.y = contentViewTop == 0 ? h / 15 : contentViewTop;
+		infoPos.fy = h / 15;
 
 		backgPos.fy = h / 100;
 
 		screenWidth = w; // store the width
 		screenHeight = h; // store the height
 
-		doing321MaxSize = (int) (w * 0.5f);
+		doing321MaxSize = (0.25f);
 
 		// configure Paint objects for drawing game elements
 		textPaint.setTextSize(w / 20); // text size 1/20 of screen width
@@ -135,11 +167,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		// backgroundPaint.set()Color(Color.WHITE); // set background color
 		// newGame(); // set up and start a new game
 
-		// DEPENDENDO DA NAVE SELECIONADA
-		damages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage1);
-		damages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage2);
-		damages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage3);
-
 		harmBmp = BitmapFactory.decodeResource(getResources(), R.drawable.meteorbrown_big3);
 		harmBmp = Bitmap.createScaledBitmap(harmBmp, planePos.hw,
 				harmBmp.getHeight() * planePos.hw / harmBmp.getWidth(), false);
@@ -148,7 +175,38 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				boostBmp.getHeight() * planePos.hw / boostBmp.getWidth(), false);
 
 		backg = Bitmap.createScaledBitmap(thebmp, screenWidth, screenHeight, false);
-		planeBmp = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_blue);
+
+		sizeview = true;
+	} // end method onSizeChanged
+
+	// reset all the screen elements and start a new game
+	public void newGame() {
+		// From sizechanged, when players had to be created
+
+		// DEPENDENDO DA NAVE SELECIONADA
+		switch (Integer.parseInt(Players.get(0).ship)) {
+		case 1:
+			damages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage1);
+			damages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage2);
+			damages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage3);
+			break;
+		case 2:
+			damages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.playership2_damage1);
+			damages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.playership2_damage2);
+			damages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.playership2_damage3);
+			break;
+		case 3:
+			damages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.playership3_damage1);
+			damages[1] = BitmapFactory.decodeResource(getResources(), R.drawable.playership3_damage2);
+			damages[2] = BitmapFactory.decodeResource(getResources(), R.drawable.playership3_damage3);
+			break;
+
+		default:
+			break;
+		}
+
+		planeBmp = BitmapFactory.decodeResource(getResources(), shipsandcolors
+				.get((Integer.parseInt(Players.get(0).ship) - 1) * (4) + Integer.parseInt(Players.get(0).color)));
 
 		/////
 		Bitmap fire = BitmapFactory.decodeResource(getResources(), R.drawable.fire03);
@@ -179,13 +237,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 					damages[i].getHeight() * planePos.hw / damages[i].getWidth(), false);
 		}
 
-	} // end method onSizeChanged
+		////
 
-	// reset all the screen elements and start a new game
-	public void newGame() {
+		initialtime = System.currentTimeMillis();
 		backVelocity = backInitialVelocity;
 		actualDistance = 0;
-		totalDistance = 35000;
+		totalDistance = totalDistance == 0 ? 3500 : totalDistance;
 
 		int NumOfEffects = r.nextInt((int) (totalDistance <= 2500 ? 2 : 1 + totalDistance / 2500f));
 		int NumOfBoosts = r.nextInt(NumOfEffects == 0 ? 1 : NumOfEffects);
@@ -213,9 +270,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		timeLeft = initialTime; // start the countdown at 10 seconds RAFA
 
 		gameOver = false; // the game is not over
-		for (Effect ef : Effects) {
-			Log.v("ei", ef.x + "x" + ef.y + "h" + ((ef.Type == Type.Harm) ? "y" : "n"));
-		}
+		// for (Effect ef : Effects) {
+		// Log.v("ei", ef.x + "x" + ef.y + "h" + ((ef.Type == Type.Harm) ? "y" :
+		// "n"));
+		// }
+
+		// Players.add(new Player("P1", FIRST, BLUE, 25000, 200));
+		// Players.add(new Player("P2", FIRST, BLUE, 35000, 200));
+		// Players.add(new Player("P3", FIRST, BLUE, 12345, 200));
 
 		start();
 	} // end method newGame
@@ -235,7 +297,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private void update(Canvas canvas, double elapsedTimeMS) {
 		// double interval = elapsedTimeMS / 1000.0; // convert to seconds
 		if (!gameOver) {
-			int offset = 25;
+			int offset = 5;
 			qnts += 1;
 			sum = elapsedTimeMS + sum;
 			// Log.v("time", (sum)/qnts+"q"+qnts);
@@ -282,8 +344,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				if (ef.dy > 0) { // If it's already show on screen
 					ef.dy += backgPos.fy;
 					if (!ef.hit) {
-						Log.v("pos", ef.x * screenWidth / 100 + " " + ef.dy + " " + ef.hw + " " + planePos.x + " "
-								+ planePos.y + " " + planePos.hw);
+						// Log.v("pos", ef.x * screenWidth / 100 + " " + ef.dy +
+						// " " + ef.hw + " " + planePos.x + " "
+						// + planePos.y + " " + planePos.hw);
 						if ((ef.x * screenWidth / 100 >= planePos.x
 								&& ef.x * screenWidth / 100 <= planePos.x + planePos.hw
 								|| ef.x * screenWidth / 100 + ef.hw >= planePos.x
@@ -388,31 +451,83 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		canvas.drawText(getResources().getString(R.string.distance, actualDistance / 1000.0, totalDistance / 1000.0),
 				infoPos.x, infoPos.y, textPaint);
+		for (int i = 0; i < Players.size(); i++) {
+			Rect bounds = new Rect();
+			String str = Players.get(i).name + ": " + Players.get(i).distance + "/" + totalDistance / 1000.0;
+			textPaint.getTextBounds(str, 0, str.length(), bounds);
+			canvas.drawText(str, infoPos.x, infoPos.y + (bounds.height() * 1.15f) * (i + 1), textPaint);
+
+		}
+
+		// canvas.drawText(getResources().getString(R.string.distance,
+		// (int) (System.currentTimeMillis() - initialtime) / 1000.0,
+		// totalDistance / 1000.0), infoPos.x,
+		// infoPos.y, textPaint);
+
 		// 30, contentViewTop==0?50:contentViewTop, textPaint);
 
 	} // end method drawGameElements
 
+	Bitmap bitmapCountdown;
+	String textCountdown = "";
+	long initialtimecountdown = 0;
+
 	private void doing321(Canvas canvas, double elapsedTimeMS) {
+		if (initialtimecountdown == 0)
+			initialtimecountdown = System.currentTimeMillis();
 		Matrix matrix = new Matrix();
 		matrix.setRotate(planePos.r);
 		tempPlaneBmp = Bitmap.createBitmap(planeBmp, 0, 0, planePos.hw,
 				planeBmp.getHeight() * planePos.hw / planeBmp.getWidth(), matrix, false);
 		drawGameElements(canvas);
-		doing321 -= elapsedTimeMS * 2;
-		String text = ((Integer) ((int) (doing321 / 1000))).toString();
-		text = text.equals("0") ? "GO!" : text;
-		Paint textp = new Paint();
-		textp.setARGB(255, 0, 0, 255);
-		textp.setTextSize((float) ((doing321 / 1000) % 1) * doing321MaxSize);
-		textp.setAntiAlias(true); // smoothes the text
-		Rect bounds = new Rect();
-		textp.getTextBounds(text, 0, text.length(), bounds);
+		elapsedTimeMS = System.currentTimeMillis() - initialtimecountdown;
 
-		canvas.drawText(text, screenWidth / 2 - bounds.width() / 2, screenHeight / 2 + bounds.height() / 2, textp);
-		if (doing321 < elapsedTimeMS * 2) {
+		// doing321 =4000- elapsedTimeMS/2 ;
+		doing321 = doing321 < 1000 ? 4000 - elapsedTimeMS + 3000 : 4000 - elapsedTimeMS / 2;
+		if (!((Integer) ((int) (doing321 / 1000))).toString().equals(textCountdown) || !textCountdown.equals("GO!")) {
+			textCountdown = ((Integer) ((int) (doing321 / 1000))).toString();
+			textCountdown = textCountdown.equals("0") ? "GO!" : ((Integer) ((int) (doing321 / 1000))).toString();
+			Paint textp = new Paint();
+			textp.setARGB(255, 0, 0, 255);
+			textp.setTextSize((float) screenWidth / 2);// ((doing321 / 1000) %
+														// 1) *
+														// doing321MaxSize);
+			textp.setAntiAlias(true); // smoothes the text
+			Rect bounds = new Rect();
+			textp.getTextBounds(textCountdown, 0, textCountdown.length(), bounds);
+			bitmapCountdown = Bitmap.createBitmap(bounds.width(), bounds.height(), Bitmap.Config.ARGB_8888);
+			Canvas canv = new Canvas(bitmapCountdown);
+			canv.drawText(textCountdown, -bounds.left, -bounds.top, textp);
+			// Log.v("tamme",bounds.width()+" "+textCountdown+"
+			// "+bounds.height());
+			// Log.v("tamme",bitmapCountdown.getWidth()+" "+textCountdown+"
+			// "+bitmapCountdown.getHeight());
+
+		}
+		if (doing321 < 50) {// elapsedTimeMS * 2) {
 			do321 = false;
 			doing321 = 4000;
+			return;
 		}
+		// Log.v("tamm",((int)(((doing321 / 1000) % 1) *
+		// screenWidth*doing321MaxSize))+"a"+((int)(bitmapCountdown.getHeight()*
+		// ((doing321 / 1000) % 1) *
+		// screenWidth*doing321MaxSize/bitmapCountdown.getWidth())));
+		Log.v("w", (bitmapCountdown.getWidth() * ((doing321 / 1000) % 1) * screenHeight * doing321MaxSize
+				/ bitmapCountdown.getHeight()) + "");
+		Log.v("h", (((doing321 / 1000) % 1) * screenHeight * doing321MaxSize) + "");
+		Bitmap temp = Bitmap.createScaledBitmap(bitmapCountdown,
+				(int) (bitmapCountdown.getWidth() * ((doing321 / 1000) % 1) * screenHeight * doing321MaxSize
+						/ bitmapCountdown.getHeight()),
+				(int) (((doing321 / 1000) % 1) * screenHeight * doing321MaxSize), false);
+
+		canvas.drawBitmap(temp, (float) screenWidth / 2 - temp.getWidth() / 2,
+				(float) screenHeight / 2 - temp.getHeight() / 2, null);
+				// canvas.drawBitmap(temp, (float)0, (float)500, null);
+
+		// canvas.drawText(textCountdown, screenWidth / 2 - bounds.width() / 2,
+		// screenHeight / 2 + bounds.height() / 2, textp);
+
 	}
 
 	// public void movePlane(MotionEvent event1, MotionEvent event2, float
@@ -609,8 +724,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	class Effect implements Comparable<Effect> {
 		public Type Type;
 		/**
-		 * X is a value between 0 and 100, which is a position between the left
-		 * and right of the screen
+		 * X is a value between 0 and 100, which is a position between the left and right of the screen
 		 */
 		public int x;
 		public int y;
@@ -629,6 +743,42 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		public int compareTo(Effect arg0) {
 			return ((Integer) y).compareTo(arg0.y);
 		}
+	}
+
+	public class Player implements Comparable<Player> {
+		public String name;
+		public String ship;
+		public String color;
+		public int distance;
+		public int score;
+		public String device;
+
+		public Player(String device) {
+			this.device = device;
+		}
+
+		public Player(String name, String ship, String color, int distance, int score) {
+			this.name = name;
+			this.ship = ship;
+			this.color = color;
+			this.distance = distance;
+			this.score = score;
+		}
+
+		public Player(String name, String ship, String color, int distance, int score, String device) {
+			this.name = name;
+			this.ship = ship;
+			this.color = color;
+			this.distance = distance;
+			this.score = score;
+			this.device = device;
+		}
+
+		@Override
+		public int compareTo(Player another) {
+			return ((Integer) this.distance).compareTo(another.distance);
+		}
+
 	}
 
 }
