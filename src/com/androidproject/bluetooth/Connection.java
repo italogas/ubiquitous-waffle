@@ -195,6 +195,7 @@ public class Connection {
     }
 
     public int sendMessage(String device, String message) {
+    	Log.v("sendingto"+device, message);
         if (!mStarted) {
             return Connection.FAILURE;
         }

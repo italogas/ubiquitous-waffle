@@ -246,7 +246,8 @@ public class ConnectionService extends Service {
                     myBSock = getConnectedSocket(myBtServer, mUuid.get(i));
                     if (myBSock == null) {
                         try {
-                            Thread.sleep(200);
+                            Log.w("Trying", "Retrying to connect");
+                            Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             Log.e(TAG, "InterruptedException in connect", e);
                         }

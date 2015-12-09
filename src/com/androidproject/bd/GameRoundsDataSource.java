@@ -144,7 +144,51 @@ public class GameRoundsDataSource {
     }
     
 	public void insertRecord(GameRoundData round) {
-		//TODO
+		ContentValues values = new ContentValues();
+    
+    
+    		
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_TIMESTAMP, round.getTime_stamp());
+	    	
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_PLAYER1, round.getPlayer1());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SCORE1, round.getPlayer1_score());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_DISTANCE1, round.getPlayer1_distance());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SHIP1, round.getPlayer1_ship());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_COLOR1, round.getPlayer1_color());
+	    	
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_PLAYER2, round.getPlayer2());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SCORE2, round.getPlayer2_score());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_DISTANCE2, round.getPlayer2_distance());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SHIP2, round.getPlayer2_ship());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_COLOR2, round.getPlayer2_color());
+	    	
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_PLAYER3, round.getPlayer3());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SCORE3, round.getPlayer3_score());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_DISTANCE3, round.getPlayer3_distance());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SHIP3, round.getPlayer3_ship());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_COLOR3, round.getPlayer3_color());
+	    	
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_PLAYER4, round.getPlayer4());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SCORE4, round.getPlayer4_score());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_DISTANCE4, round.getPlayer4_distance());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_SHIP4, round.getPlayer4_ship());
+	    	values.put(GameRoundDBSQLiteHelper.COLUMN_COLOR4, round.getPlayer4_color());
+	    	
+    		long insertId = database.insert(GameRoundDBSQLiteHelper.TABLE_GAME_ROUND, null, values);
+    		
+    		if ( insertId == -1) { 
+    			Log.v("DATABASE", "DATABASE INSERTION ERROR");
+    		} else {
+				Cursor query = database.query(GameRoundDBSQLiteHelper.TABLE_GAME_ROUND, allColumns, 
+    					GameRoundDBSQLiteHelper.COLUMN_ID + " = " +insertId, null, null, null, null);
+				query.moveToFirst();
+				GameRoundData roundData = cursorToGameRoundData(query);
+				Log.v("DBInsertion result", roundData.toString());
+			}
+    		
+    	
+		
+       
 	}
 	
 	public void deleteRecord(GameRoundData round) {

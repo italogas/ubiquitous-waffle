@@ -3,6 +3,7 @@ package com.androidproject;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.androidproject.bd.CustomAdapter;
 import com.androidproject.bd.GameRoundData;
 import com.androidproject.bd.GameRoundsDataSource;
 
@@ -35,12 +36,12 @@ public class DBActivity extends Activity {
 
 		// get all registered records in example file
 		List<GameRoundData> allRecords = gameRoundsDataSource.getAllRecords();
-
+		gameRoundsDataSource.close();
 		adapter = new ArrayAdapter<GameRoundData>(this, android.R.layout.simple_list_item_1, allRecords);
-
+		CustomAdapter ca =  new CustomAdapter(this, allRecords, getApplicationContext().getResources());
 		listView = (ListView) findViewById(R.id.listView);
 
-		listView.setAdapter(adapter);
+		listView.setAdapter(ca);
 
 	}
 

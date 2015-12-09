@@ -2,7 +2,6 @@ package com.androidproject;
 
 import java.sql.SQLException;
 
-import com.androidproject.GameView.Player;
 import com.androidproject.bd.PreferencesData;
 import com.androidproject.bd.PreferencesDataSource;
 import com.androidproject.bluetooth.Connection;
@@ -32,6 +31,7 @@ import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -158,7 +158,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 		}
 
 		gameLay.setVisibility(View.INVISIBLE);
-//		newgameLay.setVisibility(View.VISIBLE);
+		// newgameLay.setVisibility(View.VISIBLE);
 
 		self = this;
 
@@ -172,6 +172,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 				chooseLay.setVisibility(View.GONE);
 				enterLay.setVisibility(View.GONE);
 				createLay.setVisibility(View.VISIBLE);
+				mType = SERVER;
 				mConnection = new Connection(self, serviceReadyListener);
 			}
 		});
@@ -193,14 +194,14 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 			@Override
 			public void onClick(View v) {
-				
+
 				// Check if no view has focus:
 				View view = self.getCurrentFocus();
-				if (view != null) {  
-				    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-				    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+				if (view != null) {
+					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
 				}
-				
+
 				if (gameView.Players.size() > 1) {
 					// mConnection = new Connection(self, serviceReadyListener);
 					// newgameLay.setVisibility(View.INVISIBLE);
@@ -210,23 +211,27 @@ public class GameActivity extends Activity implements SensorEventListener {
 					StringBuilder beginning = new StringBuilder(
 							"BEGIN:" + editTextDistance.getText().toString() + ":" + gameView.Players.size() + ":");
 
-					for (GameView.Player p : gameView.Players) {
+					for (Player p : gameView.Players) {
 						beginning.append(p.device);
 						beginning.append(":");
 					}
-					for (GameView.Player p : gameView.Players) {
-						beginning.append((Integer.parseInt(p.ship) * 10 + Integer.parseInt(p.color)) + "");
+					for (Player p : gameView.Players) {
+						beginning.append(p.getShipColor());
 						beginning.append(":");
 					}
-					for (GameView.Player p : gameView.Players) {
+					for (Player p : gameView.Players) {
 						beginning.append(p.name);
 						beginning.append(":");
 					}
-					mConnection.sendMessage(rivalDevice, beginning.toString());
+					for (int i = 1; i < gameView.Players.size(); i++) {
+
+						mConnection.sendMessage(StringToMAC(gameView.Players.get(i).device), beginning.toString());
+					}
+
 				} else if (seekBarNumOfPlayers.getProgress() == 1) {
 
-					gameView.Players.add(gameView.new Player(preferencesData.getPlayer1(),
-							preferencesData.getPlayer1_ship(), preferencesData.getPlayer1_color(), 0, 0));
+					gameView.Players.add(new Player(preferencesData.getPlayer1(), preferencesData.getPlayer1_ship(),
+							preferencesData.getPlayer1_color(), 0, 0, "me"));
 
 				} else {
 					Toast.makeText(self, "There's only you here", Toast.LENGTH_SHORT).show();
@@ -291,10 +296,86 @@ public class GameActivity extends Activity implements SensorEventListener {
 		enterLay.setVisibility(View.GONE);
 		newgameLay.setEnabled(false);
 		gameView.newGame();
-
+		gaming.start();
 		gameLay.setVisibility(View.VISIBLE);
 
 	}
+
+	Thread gaming = new Thread(new Runnable() {
+		public void run() {
+			while (true)
+				while (gameView != null)
+					while (gameView.Updater != null)
+						while (gameView.Updater.getRunning() || !gameView.gameOver) {
+							try {
+								Thread.sleep(200);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							// Log.v("gaming", "sending msgs");
+							boolean end = false;
+							// CHECK IF SOMEONE WON
+							if (mType == SERVER)
+								for (Player p : gameView.Players) {
+									if (p.distance >= gameView.totalDistance) {
+										end = true;
+
+									}
+
+								}
+
+							if (mType == SERVER) {
+								// ALLPOS:IDP1:IDP2:...:DISTP1:DISTP2:...
+								// MYPOS:DISTANCEP1
+								StringBuilder sending = new StringBuilder();
+								if (!end) {
+									sending.append("ALLPOS:");
+									for (Player p : gameView.Players) {
+										sending.append(p.device);
+										sending.append(":");
+									}
+									for (Player p : gameView.Players) {
+										sending.append(p.distance);
+										sending.append(":");
+									}
+
+								} else {
+									sending.append("THEEND:");
+
+									for (Player p : gameView.Players) {
+										p.score = (int) (p.distance
+												* (0.5 + (((float) p.distance) / (float) gameView.totalDistance)
+														* (((float) p.distance) / (float) gameView.totalDistance)
+														* 0.5));
+									}
+									for (Player p : gameView.Players) {
+										sending.append(p.device);
+										sending.append(":");
+									}
+									for (Player p : gameView.Players) {
+										sending.append(p.score);
+										sending.append(":");
+									}
+
+									// gameView.endOfGame();
+								}
+
+								// mConnection.sendMessage(rivalDevice,
+								// sending.toString());
+								for (int i = 1; i < gameView.Players.size(); i++) {
+
+									mConnection.sendMessage(StringToMAC(gameView.Players.get(i).device),
+											sending.toString());
+								}
+								if (end)
+									gameView.endOfGame();
+							} else {
+								mConnection.sendMessage(rivalDevice, "MYPOS:" + gameView.Players.get(0).distance);
+							}
+						}
+		}
+	});
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -384,15 +465,15 @@ public class GameActivity extends Activity implements SensorEventListener {
 	@Override
 	protected void onDestroy() {
 		// air
+		if (serverList != null) {
+			serverList.finish();
+			serverList = null;
+		}
 		if (mConnection != null) {
 			mConnection.shutdown();
 		}
 		if (mPlayer != null) {
 			mPlayer.release();
-		}
-		if (serverList != null) {
-			serverList.finish();
-			serverList = null;
 		}
 
 		super.onDestroy();
@@ -425,7 +506,6 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -537,6 +617,17 @@ public class GameActivity extends Activity implements SensorEventListener {
 	// }
 	// };
 
+	private String StringToMAC(String str) {
+
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < str.length() - 1; i += 2) {
+			sb.append(str.substring(i, i + 2));
+			sb.append(":");
+		}
+		sb.deleteCharAt(sb.length() - 1);
+		return sb.toString();
+	}
+
 	public Thread waitForChoose = new Thread(new Runnable() {
 
 		@Override
@@ -544,10 +635,9 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 			while (serverList.Result == 0) {
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(100);
 
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
@@ -560,7 +650,8 @@ public class GameActivity extends Activity implements SensorEventListener {
 				Log.v("oq", device);
 				int connectionStatus = mConnection.connect(device, dataReceivedListener, disconnectedListener);
 				if (connectionStatus != Connection.SUCCESS) {
-					Toast.makeText(self, "Unable to connect; please try again.", 1).show();
+					Looper.prepare();
+					Toast.makeText(self, "Unable to connect; please try again.", Toast.LENGTH_SHORT).show();
 				} else {
 					rivalDevice = device;
 					// CHAMAR AQUI O NEWGAME
@@ -614,7 +705,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 					connectionLostAlert.setPositiveButton("Ok", new OnClickListener() {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
-							finish();
+							// finish();
 						}
 					});
 					connectionLostAlert.setCancelable(false);
@@ -637,13 +728,13 @@ public class GameActivity extends Activity implements SensorEventListener {
 		@Override
 		public void OnIncomingConnection(final String device) {
 			Log.w("rafaOnIncomingConnectionListener", device + "uu");
-			rivalDevice = device;
+			// rivalDevice = device;
 
 			runOnUiThread(new Runnable() {
 				public void run() {
 					arrayAdapter1.add(device);
 					// String dist=editTextDistance.getText().toString();
-					mConnection.sendMessage(rivalDevice,
+					mConnection.sendMessage(device,
 							"CONFIG:" + device.replace(":", "") + ":" + preferencesData.getPlayer1());
 					// gameView.Players.add(gameView.new Player(preferencesData.getPlayer1(),preferencesData.getPlayer1_ship(),preferencesData.getPlayer1_color(),0,0,myid));
 					// colora new player
@@ -667,8 +758,8 @@ public class GameActivity extends Activity implements SensorEventListener {
 			Log.w("rafaOnMaxConnectionsReached", "");
 		}
 	};
-
-	// SHIPCOLOR= SHIP*10+COLOR
+	// ALLPOS:IDP1:IDP2:...:DISTP1:DISTP2:... (SERVER->CLIENT)
+	// MYPOS:DISTANCEP1 (FROM CLIENT TO SERVER)
 	// BEGIN:SIZE OF PATH:NUMBER OF PLAYERS:IDP1:IDP2:...:SHIPCOLORP1:SHIPCOLORP2:...:NAME OF PLAYER1:NAME OF PLAYER2:... (SERVER->CLIENT)
 	// CONFIG:YOUR ID:NAME OF CREATOR (SERVER->CLIENT)
 	// REPLY:SERVER DEVICE:CLIENTID:SHIP COLOR:NAME (FROM CLIENT TO SERVER)
@@ -677,12 +768,13 @@ public class GameActivity extends Activity implements SensorEventListener {
 		@Override
 		public void OnMessageReceived(String device, String message) {
 			Log.w("rafadataReceivedListener", device + "uu" + message);
+
+			final String[] scoreMessageSplit = message.split(":");
 			if (message.indexOf("CONFIG") == 0) {
-				final String[] scoreMessageSplit = message.split(":");
 				String myid = scoreMessageSplit[1];
 				// Game will begin, so I put my user on game
-				gameView.Players.add(gameView.new Player(preferencesData.getPlayer1(),
-						preferencesData.getPlayer1_ship(), preferencesData.getPlayer1_color(), 0, 0, myid));
+				gameView.Players.add(new Player(preferencesData.getPlayer1(), preferencesData.getPlayer1_ship(),
+						preferencesData.getPlayer1_color(), 0, 0, myid));
 
 				runOnUiThread(new Runnable() {
 					public void run() {
@@ -690,26 +782,30 @@ public class GameActivity extends Activity implements SensorEventListener {
 					}
 				});
 
-				mConnection.sendMessage(rivalDevice,
-						"REPLY:" + device.replace(":", "") + ":" + myid + ":"
-								+ (Integer.parseInt(preferencesData.getPlayer1_ship()) * 10
-										+ Integer.parseInt(preferencesData.getPlayer1_color()))
-								+ ":" + preferencesData.getPlayer1());
+				mConnection.sendMessage(rivalDevice, "REPLY:" + device.replace(":", "") + ":" + myid + ":"
+
+				+ Player.convertfromShipAndColorToShipColor(preferencesData.getPlayer1_ship(),
+						preferencesData.getPlayer1_color())
+						// + (Integer.parseInt(preferencesData.getPlayer1_ship()) * 10
+						// + Integer.parseInt(preferencesData.getPlayer1_color()))
+
+				+ ":" + preferencesData.getPlayer1());
 
 				// hostScore = Integer.parseInt(scoreMessageSplit[1]);
 				// clientScore = Integer.parseInt(scoreMessageSplit[2]);
 				// showScore();
 			} else if (message.indexOf("BEGIN") == 0) {
 				// Client receiving message from server
-				final String[] scoreMessageSplit = message.split(":");
 				gameView.totalDistance = Integer.parseInt(scoreMessageSplit[1]);
 				int nOfPlayers = Integer.parseInt(scoreMessageSplit[2]);
 				for (int i = 0; i < nOfPlayers; i++) {
 					if (!scoreMessageSplit[i + 3].equals(gameView.Players.get(0).device))
-						gameView.Players.add(gameView.new Player(scoreMessageSplit[i + 3 + nOfPlayers * 2],
-								(Integer.parseInt(scoreMessageSplit[i + 3 + nOfPlayers]) / 10) + "",
-								(Integer.parseInt(scoreMessageSplit[i + 3 + nOfPlayers]) % 10) + "", 0, 0,
-								scoreMessageSplit[i + 3]));
+						gameView.Players.add(new Player(scoreMessageSplit[i + 3 + nOfPlayers * 2],
+								Player.convertfromShipColortoShip(
+										Integer.parseInt(scoreMessageSplit[i + 3 + nOfPlayers])),
+								Player.convertfromShipColortoColor(
+										Integer.parseInt(scoreMessageSplit[i + 3 + nOfPlayers]) % 10),
+								0, 0, scoreMessageSplit[i + 3]));
 				}
 
 				runOnUiThread(new Runnable() {
@@ -721,18 +817,55 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 			} else if (message.indexOf("REPLY") == 0) {
 				// REPLY:SERVER DEVICE:CLIENTID:SHIP COLOR:NAME (FROM CLIENT TO SERVER)
-				// Client receiving message from server
-				final String[] scoreMessageSplit = message.split(":");
 				String serverid = scoreMessageSplit[1];
 				// If it's the first client to come, the server puts himself on the list first
 				if (gameView.Players.size() == 0) {
-					gameView.Players.add(gameView.new Player(preferencesData.getPlayer1(),
-							preferencesData.getPlayer1_ship(), preferencesData.getPlayer1_color(), 0, 0, serverid));
+					gameView.Players.add(new Player(preferencesData.getPlayer1(), preferencesData.getPlayer1_ship(),
+							preferencesData.getPlayer1_color(), 0, 0, serverid));
 
 				}
-				gameView.Players.add(
-						gameView.new Player(scoreMessageSplit[4], (Integer.parseInt(scoreMessageSplit[3]) / 10) + "",
-								(Integer.parseInt(scoreMessageSplit[3]) % 10) + "", 0, 0, scoreMessageSplit[2]));
+				gameView.Players.add(new Player(scoreMessageSplit[4],
+						Player.convertfromShipColortoShip(Integer.parseInt(scoreMessageSplit[3])),
+						Player.convertfromShipColortoColor(Integer.parseInt(scoreMessageSplit[3])), 0, 0,
+						scoreMessageSplit[2]));
+
+			} else if (message.indexOf("MYPOS") == 0) { // Server receiving and updating his database
+				for (Player p : gameView.Players) {
+					if (p.device.equals(device.replace(":", ""))) {
+						p.distance = Integer.parseInt(scoreMessageSplit[1]);
+						break;
+					}
+
+				}
+
+			} else if (message.indexOf("ALLPOS") == 0) {
+				int nOfPlayers = (scoreMessageSplit.length - 1) / 2;
+				for (int i = 0; i < nOfPlayers; i++) {
+					if (!scoreMessageSplit[i + 1].equals(gameView.Players.get(0).device))
+						for (Player p : gameView.Players) {
+							if (p.device.equals(scoreMessageSplit[i + 1])) {
+								p.distance = Integer.parseInt(scoreMessageSplit[i + nOfPlayers + 1]);
+								break;
+							}
+
+						}
+
+				}
+
+			} else if (message.indexOf("THEEND") == 0) {
+				int nOfPlayers = (scoreMessageSplit.length - 1) / 2;
+				for (int i = 0; i < nOfPlayers; i++) {
+					// if (!scoreMessageSplit[i + 1].equals(gameView.Players.get(0).device))
+					for (Player p : gameView.Players) {
+						if (p.device.equals(scoreMessageSplit[i + 1])) {
+							p.score = Integer.parseInt(scoreMessageSplit[i + nOfPlayers + 1]);
+							break;
+						}
+
+					}
+
+				}
+				gameView.endOfGame();
 
 			}
 		}
