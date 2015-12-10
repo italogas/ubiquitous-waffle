@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -108,6 +109,7 @@ public class GameActivity extends Activity implements SensorEventListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_game);
+		getWindow().getDecorView().setBackgroundColor(Color.GRAY);
 		gameView = (GameView) findViewById(R.id.gameView);
 		gameLay = (RelativeLayout) findViewById(R.id.gameLay);
 		newgameLay = (RelativeLayout) findViewById(R.id.newgameLay);

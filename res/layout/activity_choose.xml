@@ -16,9 +16,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:paddingBottom="20dp"
-            android:text="Your preferences"
-            android:textSize="20sp" />
+            android:text="Preferences"
+            android:textColor="#233AAC"
+            android:textSize="32sp" 
+            android:textStyle="bold"/>
 
         <ScrollView
             android:layout_width="match_parent"
@@ -40,7 +43,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Name" />
+                        android:text="Name" 
+                        android:textStyle="bold" 
+                        android:textColor="#233AAC" />
 
                     <EditText
                         android:id="@+id/editText1"
@@ -55,13 +60,17 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ship" />
+                    android:layout_marginBottom="20dp"
+                    android:text="Ship" 
+                    android:textStyle="bold" 
+                    android:textColor="#233AAC" />
 
                 <ImageView
                     android:id="@+id/imageView1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:layout_marginBottom="20dp"
                     android:src="@drawable/playership1_blue" />
 
                 <LinearLayout
@@ -73,22 +82,30 @@
                         android:id="@+id/button1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginRight="10dp"
                         android:layout_weight="1"
-                        android:text="Ship" />
+                        android:text="Ship" 
+                        android:textColor="#FFFFFFFF"
+            			android:background="@drawable/button" />
 
                     <Button
                         android:id="@+id/button2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Color" />
+                        android:text="Color" 
+                        android:textColor="#FFFFFFFF"
+            			android:background="@drawable/button" />
+                    
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingTop="20dp"
-                    android:text="Preferred distance" />
+                    android:text="Preferred distance" 
+                    android:textStyle="bold" 
+                    android:textColor="#233AAC" />
 
                 <EditText
                     android:id="@+id/editText2"

@@ -8,6 +8,7 @@ import com.androidproject.bd.GameRoundData;
 import com.androidproject.bd.GameRoundsDataSource;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -25,6 +26,8 @@ public class DBActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_db);
+		
+		getWindow().getDecorView().setBackgroundColor(Color.GRAY);
 
 		// get database access point
 		gameRoundsDataSource = new GameRoundsDataSource(getApplicationContext());

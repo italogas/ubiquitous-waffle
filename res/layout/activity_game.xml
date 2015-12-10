@@ -24,15 +24,22 @@
 
                 <Button
                     android:id="@+id/button1"
-                    android:layout_width="wrap_content"
+                    android:layout_width="150dp"
                     android:layout_height="wrap_content"
-                    android:text="Create a game" />
+                    android:layout_marginTop="150dp"
+                    android:text="Create a game" 
+                    android:textColor="#FFFFFFFF"
+            		android:background="@drawable/button" />
 
                 <Button
                     android:id="@+id/button2"
-                    android:layout_width="wrap_content"
+                    android:layout_width="150dp"
                     android:layout_height="wrap_content"
-                    android:text="Enter in a game" />
+                    android:layout_marginTop="15dp"
+                    android:text="Enter in a game" 
+                    android:textColor="#FFFFFFFF"
+            		android:background="@drawable/button" />
+                
             </LinearLayout>
 
             <LinearLayout
@@ -48,7 +55,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="Choose the size of the path" />
+                    android:text="Choose the size of the path" 
+                    android:textStyle="bold" 
+                    android:textColor="#233AAC" />
 
                 <EditText
                     android:id="@+id/editText1"
@@ -64,7 +73,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:paddingTop="20dp"
-                    android:text="@string/number_of_players" />
+                    android:text="@string/number_of_players" 
+                    android:textStyle="bold" 
+                    android:textColor="#233AAC" />
 
                 <SeekBar
                     android:id="@+id/seekBar1"
@@ -78,7 +89,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:paddingTop="20dp"
-                    android:text="Players connected" />
+                    android:text="Players connected" 
+                    android:textStyle="bold" 
+                    android:textColor="#233AAC" />
                  
                 <ListView
                     android:id="@+id/listView"
@@ -92,7 +105,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="Begin" />
+                    android:text="Begin" 
+                    android:textColor="#FFFFFFFF"
+            		android:background="@drawable/button" />
+                
             </LinearLayout>
 
             <LinearLayout

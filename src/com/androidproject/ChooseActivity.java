@@ -11,6 +11,7 @@ import com.androidproject.bd.PreferencesDataSource;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,6 +35,7 @@ public class ChooseActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_choose);
+		getWindow().getDecorView().setBackgroundColor(Color.GRAY);
 		Button ship = (Button) findViewById(R.id.button1);
 		Button color = (Button) findViewById(R.id.button2);
 		imgv = (ImageView) findViewById(R.id.imageView1);
