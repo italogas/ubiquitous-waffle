@@ -36,7 +36,6 @@ public class PreferencesDataSource {
 
 	public void open() throws SQLException {
 		database = preferencesDBHelper.getWritableDatabase();
-		// addRecords();
 	}
 
 	public void close() {
@@ -49,8 +48,7 @@ public class PreferencesDataSource {
 
 	/**
 	 * @param value
-	 *            The string with the values of Player, Score, Distance, Ship
-	 *            and Color, separated by ':'
+	 *            The string with the values of Player, Score, Distance, Ship and Color, separated by ':'
 	 * @return true if updated correctly.
 	 */
 	public boolean updatePrefs(String value) {

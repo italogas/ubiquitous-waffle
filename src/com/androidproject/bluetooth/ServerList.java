@@ -36,7 +36,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * A simple list that displays Bluetooth devices that are in discoverable mode. This can be used as a gamelobby where players can see available servers and pick the one they wish to connect to.
@@ -63,10 +62,8 @@ public class ServerList {
 			Parcelable btParcel = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 			BluetoothDevice btDevice = (BluetoothDevice) btParcel;
 			arrayAdapter.add(btDevice.getName() + " - " + btDevice.getAddress());
-			// arrayAdapter.notifyDataSetChanged();
-
-			Toast.makeText(context, btDevice.getName() + " - " + btDevice.getAddress(), Toast.LENGTH_LONG).show();
-			Log.v("tag", btDevice.getName() + " - " + btDevice.getAddress());
+			// Toast.makeText(context, btDevice.getName() + " - " + btDevice.getAddress(), Toast.LENGTH_LONG).show();
+			Log.v("Found", btDevice.getName() + " - " + btDevice.getAddress());
 		}
 	};
 
@@ -82,42 +79,27 @@ public class ServerList {
 
 	public void Resume() {
 		arrayAdapter = new ArrayAdapter<String>(context, R.layout.text);
-		// ListView lv = self.getListView();
-		// lv = (ListView)findViewById(R.id.listView);
 		lv.setAdapter(arrayAdapter);
-		Log.v("oi", "oi0");
 		lv.setOnItemClickListener(new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 
-				Log.v("oi", "oi2");
-				myBt.cancelDiscovery(); // Cancel BT discovery explicitly so
-				// that connections can go through
+				myBt.cancelDiscovery(); // Cancel BT discovery explicitly so that connections can go through
 				String btDeviceInfo = ((TextView) arg1).getText().toString();
 				String btHardwareAddress = btDeviceInfo.substring(btDeviceInfo.length() - 17);
 				Intent i = new Intent();
 				i.putExtra(EXTRA_SELECTED_ADDRESS, btHardwareAddress);
-				// self.setResult(Activity.RESULT_OK, i);
 				ResultIntent = i;
 				device = btHardwareAddress;
 
-				Log.v("oq", device);
 				Result = Activity.RESULT_OK;
-				// finish();
-				// onPause();
-				// onDestroy();
 				arg1.setSelected(!arg1.isSelected());
 				finish();
 			}
 		});
 		onResume();
-
-		// waitForChoose.start();
-
 		myBt = BluetoothAdapter.getDefaultAdapter();
 		myBt.startDiscovery();
-		Log.v("oi", "oi1");
-		// self.setResult(Activity.RESULT_CANCELED);
 	}
 
 	public String device;
@@ -144,8 +126,7 @@ public class ServerList {
 
 	protected void onDestroy() {
 		if (myBt != null) {
-			myBt.cancelDiscovery(); // Ensure that we don't leave discovery
-			// running by accident
+			myBt.cancelDiscovery(); // Ensure that we don't leave discovery running by accident
 		}
 	}
 

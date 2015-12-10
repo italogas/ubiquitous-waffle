@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -49,7 +48,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private Activity activity; // to display Game Over dialog in GUI thread
 	// variables for the game loop and tracking statistics
 	public boolean gameOver; // is the game over?
-	private double timeLeft; // the amount of time left in seconds
 	public long initialTime = 0; // the amount of time in seconds RAFA
 	private float puckXVelocity; // blocker speed multiplier during game
 	private float backVelocity; // blocker speed multiplier during game
@@ -66,7 +64,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	private int screenHeight; // height of the screen
 	// constants and variables for managing sounds
 	private static final int FIRE = 0;
-	private static final int MARIO = 1;
 	private SoundPool soundPool; // plays sound effects
 	private SparseIntArray soundMap; // maps IDs to SoundPool
 	// Paint variables used when drawing each item on the screen
@@ -91,7 +88,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	// a distance that was poisoned by the position of the plane
 	private int poisonedDistance;
 	private long initialtime;
-	private boolean sizeview = false;
 
 	ArrayList<Player> Players = new ArrayList<Player>();
 	ArrayList<Integer> shipsandcolors = new ArrayList<Integer>();
@@ -100,26 +96,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	public GameView(Context context, AttributeSet attrs) {
 		super(context, attrs); // call super's constructor
-		Log.v("init", "const");
-		// setZOrderOnTop(true);
 		activity = (Activity) context;
 		// register SurfaceHolder.Callback listener
 		holder = getHolder();
 		holder.addCallback(this);
-		// holder.setFormat(PixelFormat.TRANSPARENT);
-
 		// initialize SoundPool to play the app's three sound effects
 		soundPool = new SoundPool(99, AudioManager.STREAM_MUSIC, 0);
 		// create Map of sounds and pre-load sounds (load returns a sound_ID)
-		soundMap = new SparseIntArray();// <Integer, Integer>(); // create new
-										// HashMap
+		soundMap = new SparseIntArray();// <Integer, Integer>(); // create new HashMap
 		mPlayer = MediaPlayer.create(context, R.raw.music);
 		mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mPlayer.setLooping(true);
-		// mPlayer.
 		soundMap.put(FIRE, soundPool.load(context, R.raw.cannon_fire, 1));
-		// soundMap.put(MARIO, soundPool.load(context, R.raw.music, 1));
-
 		// construct Paints for drawing text, cannonball, cannon,
 		// blocker and target; these are configured in method onSizeChanged
 		textPaint = new Paint(); // Paint for drawing text
@@ -182,8 +170,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		textPaint.setAntiAlias(true); // smoothes the text
 		backgroundPaint.setColor(Color.WHITE); // set background color
 		backgroundPaint.setColor(Color.TRANSPARENT); // set background color
-		// backgroundPaint.set()Color(Color.WHITE); // set background color
-		// newGame(); // set up and start a new game
 
 		Rect bounds = new Rect();
 		String str = "qwertyuiop´[asdfghjklç~]\\zxcvbnm,.;QWERTYUIOP`{ASDFGHJKLÇ^}|ZXCVBNM<>:'1234567890-=\"!@#$%¨&*()_+";
@@ -199,14 +185,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		backg = Bitmap.createScaledBitmap(thebmp, screenWidth, screenHeight, false);
 
-		sizeview = true;
 	} // end method onSizeChanged
 
 	// reset all the screen elements and start a new game
 	public void newGame() {
 		// From sizechanged, when players had to be created
 
-		// DEPENDENDO DA NAVE SELECIONADA
+		// DEPENDING ON SELECTED SHIP
 		switch (Integer.parseInt(Players.get(0).ship)) {
 		case 1:
 			damages[0] = BitmapFactory.decodeResource(getResources(), R.drawable.playership1_damage1);
@@ -267,7 +252,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		actualDistance = 0;
 		totalDistance = totalDistance == 0 ? 3500 : totalDistance;
 
-		int NumOfEffects = r.nextInt((int) (totalDistance <= 2500 ? 2 : 1 + totalDistance / 2500f));
+		int NumOfEffects = r.nextInt((int) (totalDistance <= 1000 ? 1 : 1 + totalDistance / 1000f)) + 2;
 		int NumOfBoosts = r.nextInt(NumOfEffects == 0 ? 1 : NumOfEffects);
 
 		for (int i = 0; i < NumOfEffects; i++) {
@@ -277,51 +262,28 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				Effects.add(new Effect(Type.Harm, r.nextInt(100), r.nextInt(totalDistance), planePos.hw));
 		}
 		Collections.sort(Effects);
-
-		// for (int i = 0; i < 35000; i += 3000)
-		// Effects.add(new Effect(Type.Boost, 50, i));
-
 		backgPos.y = 0;
-
 		planePos.x = planePos.fx;
 		planePos.y = planePos.fy;
 		planePos.r = 0;
 		planePos.damaged = -1;
-		puckXVelocity = 0;// initialBlockerVelocity;
-		// timeLeft = 10; // start the countdown at 10 seconds
-		// timeLeft = initialTime; // start the countdown at 10 seconds RAFA
-
+		puckXVelocity = 0;
 		gameOver = false; // the game is not over
-		// for (Effect ef : Effects) {
-		// Log.v("ei", ef.x + "x" + ef.y + "h" + ((ef.Type == Type.Harm) ? "y" :
-		// "n"));
-		// }
-
-		// Players.add(new Player("P1", FIRST, BLUE, 25000, 200));
-		// Players.add(new Player("P2", FIRST, BLUE, 35000, 200));
-		// Players.add(new Player("P3", FIRST, BLUE, 12345, 200));
-
 		start();
 	} // end method newGame
 
 	public void start() {
-		soundPool.play(soundMap.get(MARIO), 0.5f, 0.5f, 1, 9999, 1f);
-
 		mPlayer.start();
 		do321 = true;
 		Updater = new RefreshHandler(holder);
 		Updater.setRunning(true);
 	}
 
-	double sum = 0;
-	double qnts = 0;
-	float aff = 1;
-	float som = 0;
+	int qnts = 0;
 
-	// called repeatedly by the CannonThread to update game elements
+	// called repeatedly to update game elements
 	// private void updatePositions(double elapsedTimeMS) {
 	private void update(Canvas canvas, double elapsedTimeMS) {
-		// double interval = elapsedTimeMS / 1000.0; // convert to seconds
 		if (initialtime == 0) {
 			initialtime = System.currentTimeMillis();
 			initialTime = initialtime;
@@ -329,12 +291,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		if (!gameOver) {
 			int offset = 5;
 			qnts += 1;
-			sum = elapsedTimeMS + sum;
-			// Log.v("time", (sum)/qnts+"q"+qnts);
 
 			if (planePos.x - planePos.hw / 2 < 5 && puckXVelocity < 0
 					|| planePos.x + planePos.hw / 2 > screenWidth - offset && puckXVelocity > 0) {
-				// nothing
 				planePos.r = 0;
 				backVelocity = backInitialVelocity;
 
@@ -348,9 +307,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				backVelocity = (float) (backInitialVelocity * (0.5 + 0.5 * (45 - Math.abs(puckXVelocity)) / 45.0));
 
 			}
-			som += backVelocity;
-			// Log.v("mov"+aff++, backVelocity+ "m="+som/aff);
-			// inc += backVelocity;
+
 			backgPos.y += backgPos.fy;
 
 			// actualDistance += backVelocity;
@@ -364,15 +321,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			Players.get(0).distance = actualDistance;
 			if (backgPos.y >= backg.getHeight())
 				backgPos.y = 0;
-			// if (puckPos.y - puckPos.hw / 2 < 5
-			// || puckPos.y + puckPos.hw / 2 > screenHeight - offset
-			// || puckPos.x - puckPos.hw / 2 < 5
-			// || puckPos.x + puckPos.hw / 2 > screenWidth - offset) {
-			//
-			// // soundPool.play(soundMap.get(CANNON_SOUND_ID), 1, 1, 1, 0, 1f);
-			//
-			// }
-			// Log.v("pq", totalDistance + "a" + actualDistance);
 
 			Matrix matrix = new Matrix();
 			matrix.setRotate(planePos.r);
@@ -382,7 +330,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			poisonedDistance = actualDistance + planePos.y - (tempPlaneBmp.getHeight() / 2);
 
 			double tempMed = (-initialtime + System.currentTimeMillis()) / qnts;
-			// if(totalDistance < poisonedDistance-planePos.y+ backVelocity*planePos.y/backgPos.fy){
 			if (totalDistance < poisonedDistance - planePos.y + tempMed * planePos.y / backgPos.fy) {
 				finishLinePos.y += backgPos.fy;
 			}
@@ -392,9 +339,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 				if (ef.dy > 0) { // If it's already show on screen
 					ef.dy += backgPos.fy;
 					if (!ef.hit) {
-						// Log.v("pos", ef.x * screenWidth / 100 + " " + ef.dy +
-						// " " + ef.hw + " " + planePos.x + " "
-						// + planePos.y + " " + planePos.hw);
 						if ((ef.x * screenWidth / 100 >= planePos.x
 								&& ef.x * screenWidth / 100 <= planePos.x + planePos.hw
 								|| ef.x * screenWidth / 100 + ef.hw >= planePos.x
@@ -402,7 +346,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 								&& (ef.dy >= planePos.y && ef.dy <= planePos.y + planePos.hw
 										|| ef.dy + ef.hw >= planePos.y && ef.dy + ef.hw <= planePos.y + planePos.hw)) {
 							// We have a collision
-							soundPool.play(soundMap.get(FIRE), 1, 1, 1, 0, 1f);// TODO
+							soundPool.play(soundMap.get(FIRE), 1, 1, 1, 0, 1f);
 							ef.hit = true;
 							if (ef.Type == Type.Harm) {
 								planePos.damaged += 1;
@@ -421,25 +365,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 						}
 
 					}
-					if (ef.dy > screenHeight) {// remove if it's no longer
-												// visible
+					if (ef.dy > screenHeight) {// remove if it's no longer visible
 						iterator.remove();
 					}
 
 				} else if (ef.y < poisonedDistance) {
 					ef.dy += backgPos.fy;
-
-					// Log.v("eit","des"+ef.X+"x"+ef.Y+"a"+actualDistance);
 				}
 			}
 
 			if (totalDistance - actualDistance < 0 || gameOver) {
-
-				// endOfGame();
 				Updater.setRunning(false);
-				// gameOver = true;
-				Log.v("time", (sum) / qnts + "q" + qnts);
-				// Log.v("pq", totalDistance + "aaa" + actualDistance);
 			}
 		}
 
@@ -453,10 +389,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		canvas.drawBitmap(backg, 0, (float) backgPos.y, null);
 		canvas.drawBitmap(backg, 0, (float) -backg.getHeight() + backgPos.y, null);
 
-		// if (totalDistance < poisonedDistance+) {
 		// FinishLine must appear in the screen
 		if (finishLinePos.y > 0) {
-			// canvas.drawBitmap(FinishLineBmp, 0, (float) (poisonedDistance - totalDistance), null);
 			canvas.drawBitmap(FinishLineBmp, 0, (float) finishLinePos.y, null);
 		}
 
@@ -485,11 +419,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 					Bitmap.Config.ARGB_8888);
 			Canvas canvas1 = new Canvas(temp);
 			canvas1.drawBitmap(tempPlaneBmp, 0, 0, null);
-			Bitmap tempDamage;// =
-								// Bitmap.createScaledBitmap(damages[planePos.damaged],
-								// planePos.hw,
-								// damages[planePos.damaged].getHeight()*planePos.hw/damages[planePos.damaged].getWidth(),false);
-
+			Bitmap tempDamage;
 			Matrix matrix = new Matrix();
 			matrix.setRotate(planePos.r);
 			tempDamage = Bitmap.createBitmap(damages[planePos.damaged], 0, 0, planePos.hw,
@@ -504,23 +434,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		canvas.drawBitmap(tempPlaneBmp, (float) (planePos.x - tempPlaneBmp.getWidth() / 2),
 				(float) (planePos.y - tempPlaneBmp.getHeight() / 2), null);
 
-		// canvas.drawText(getResources().getString(R.string.distance, actualDistance / 1000.0, totalDistance / 1000.0),
-		// infoPos.x, infoPos.y, textPaint);
 		for (int i = 0; i < Players.size(); i++) {
-			// Rect bounds = new Rect();
 			String str = Players.get(i).name + ": " + new DecimalFormat("0.0").format(Players.get(i).distance / 1000.0)
 					+ "/" + new DecimalFormat("0.0").format(totalDistance / 1000.0);
-			// textPaint.getTextBounds(str, 0, str.length(), bounds);a
 			canvas.drawText(str, infoPos.x, infoPos.y + (infoPos.hw * 1.15f) * (i), textPaint);
-			// Log.v("acha"+i,infoPos.y+"a"+bounds.height()+"j"+(bounds.height() * 1.15f)+"u"+(i + 1)+"all"+infoPos.y + (bounds.height() * 1.15f) * (i + 1));
 		}
-
-		// canvas.drawText(getResources().getString(R.string.distance,
-		// (int) (System.currentTimeMillis() - initialtime) / 1000.0,
-		// totalDistance / 1000.0), infoPos.x,
-		// infoPos.y, textPaint);
-
-		// 30, contentViewTop==0?50:contentViewTop, textPaint);
 
 	} // end method drawGameElements
 
@@ -538,26 +456,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		drawGameElements(canvas);
 		elapsedTimeMS = System.currentTimeMillis() - initialtimecountdown;
 
-		// doing321 =4000- elapsedTimeMS/2 ;
 		doing321 = doing321 < 1000 ? 4000 - elapsedTimeMS + 3000 : 4000 - elapsedTimeMS / 2;
 		if (!((Integer) ((int) (doing321 / 1000))).toString().equals(textCountdown) || !textCountdown.equals("GO!")) {
 			textCountdown = ((Integer) ((int) (doing321 / 1000))).toString();
 			textCountdown = textCountdown.equals("0") ? "GO!" : ((Integer) ((int) (doing321 / 1000))).toString();
 			Paint textp = new Paint();
 			textp.setARGB(255, 0, 0, 255);
-			textp.setTextSize((float) screenWidth / 2);// ((doing321 / 1000) %
-														// 1) *
-														// doing321MaxSize);
+			textp.setTextSize((float) screenWidth / 2);
 			textp.setAntiAlias(true); // smoothes the text
 			Rect bounds = new Rect();
 			textp.getTextBounds(textCountdown, 0, textCountdown.length(), bounds);
 			bitmapCountdown = Bitmap.createBitmap(bounds.width(), bounds.height(), Bitmap.Config.ARGB_8888);
 			Canvas canv = new Canvas(bitmapCountdown);
 			canv.drawText(textCountdown, -bounds.left, -bounds.top, textp);
-			// Log.v("tamme",bounds.width()+" "+textCountdown+"
-			// "+bounds.height());
-			// Log.v("tamme",bitmapCountdown.getWidth()+" "+textCountdown+"
-			// "+bitmapCountdown.getHeight());
 
 		}
 		if (doing321 < 50) {// elapsedTimeMS * 2) {
@@ -565,13 +476,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 			doing321 = 4000;
 			return;
 		}
-		// Log.v("tamm",((int)(((doing321 / 1000) % 1) *
-		// screenWidth*doing321MaxSize))+"a"+((int)(bitmapCountdown.getHeight()*
-		// ((doing321 / 1000) % 1) *
-		// screenWidth*doing321MaxSize/bitmapCountdown.getWidth())));
-		// Log.v("w", (bitmapCountdown.getWidth() * ((doing321 / 1000) % 1) * screenHeight * doing321MaxSize
-		// / bitmapCountdown.getHeight()) + "");
-		// Log.v("h", (((doing321 / 1000) % 1) * screenHeight * doing321MaxSize) + "");
 		Bitmap temp = Bitmap.createScaledBitmap(bitmapCountdown,
 				(int) (bitmapCountdown.getWidth() * ((doing321 / 1000) % 1) * screenHeight * doing321MaxSize
 						/ bitmapCountdown.getHeight()),
@@ -579,37 +483,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		canvas.drawBitmap(temp, (float) screenWidth / 2 - temp.getWidth() / 2,
 				(float) screenHeight / 2 - temp.getHeight() / 2, null);
-				// canvas.drawBitmap(temp, (float)0, (float)500, null);
-
-		// canvas.drawText(textCountdown, screenWidth / 2 - bounds.width() / 2,
-		// screenHeight / 2 + bounds.height() / 2, textp);
 
 	}
 
-	// public void movePlane(MotionEvent event1, MotionEvent event2, float
-	// velocityX, float velocityY) {
-	//
-	// Point touchPoint1 = new Point((int) event1.getX(), (int) event1.getY());
-	// Point touchPoint2 = new Point((int) event2.getX(), (int) event2.getY());
-	// Log.v("ui", Math.abs(touchPoint1.x - planePos.x) + " " + planePos.hw / 2
-	// + " "
-	// + Math.abs(touchPoint1.y - planePos.y) + " " + planePos.hw / 2);
-	//
-	// if (Math.abs(touchPoint1.x - planePos.x) < planePos.hw
-	// && Math.abs(touchPoint1.y - planePos.y) < planePos.hw / 2 * 3
-	// || Math.abs(touchPoint2.x - planePos.x) < planePos.hw
-	// && Math.abs(touchPoint2.y - planePos.y) < planePos.hw / 2 * 3) {
-	// puckXVelocity = (float) (velocityX / 30.0);
-	// puckYVelocity = (float) (velocityY / 30.0);
-	//
-	// }
-	//
-	// }
-
 	public void movePlane(float accel) {
-
 		puckXVelocity = (float) (accel * 25.0 * 0.2);
-
 	}
 
 	public void endOfGame() {
@@ -670,9 +548,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		dialogBuilder.setTitle("End of the game!");
 		dialogBuilder.setCancelable(false);
 		String me = Players.get(0).device.toString();
-		// Log.v("Scores",Players.get(0).device+"000"+Players.get(0).score+">"+Players.get(1).device+"111"+Players.get(1).score);
 		Collections.sort(Players);
-		// Log.v("Scores",Players.get(0).device+"000"+Players.get(0).score+">"+Players.get(1).device+"111"+Players.get(1).score);
 		if (me.equals(Players.get(0).device))
 			dialogBuilder.setMessage("You won the game with a score of " + Players.get(0).score + "!!!");// getResources().getString(R.string.results_format, shotsFired, totalElapsedTime));
 		else
@@ -683,7 +559,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 					// called when "Reset Game" Button is pressed
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						// dialogIsDisplayed = false;
 						activity.finish(); // set up and start a new game
 					} // end method onClick
 				} // end anonymous inner class
@@ -702,15 +577,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 		if (Updater != null && getHolder().getSurface().isValid())
 			Updater.setRunning(false);
-		Log.v("aa", Updater.getRunning() + "stopGame");
+		Log.v("where", Updater.getRunning() + "stopGame");
 		// soundPool.autoPause();
-		// mPlayer.pause();
+		mPlayer.pause();
 	} // end method stopGame
 		// resumes the game
 
 	public void resumeGame() {
 
-		Log.v("aa", "resumeGame");
+		Log.v("where", "resumeGame");
 		// if (cannonThread != null) {
 		// while(holder.getSurface().isValid())
 		soundPool.autoResume();
@@ -742,7 +617,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		Log.v("aa", "surfaceCreated");
+		Log.v("where", "surfaceCreated");
 		surfaceWorking = true;
 	} // end method surfaceCreated
 		// called when the surface is destroyed
@@ -751,7 +626,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		// ensure that thread terminates properly
 		surfaceWorking = false;
-		Log.v("aa", "surfaceDestroyed");
+		Log.v("where", "surfaceDestroyed");
 	} // end method surfaceDestroyed
 
 	class RefreshHandler extends Handler {
@@ -781,31 +656,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		public void handleMessage(Message msg) {
 			Canvas canvas = null; // used for drawing
 			long previousFrameTime = System.currentTimeMillis();
-			// boolean go = true;
 			if (surfaceWorking) {
-				// go = false;
 				try {
 					canvas = surfaceHolder.lockCanvas(null);
 					// lock the surfaceHolder for drawing
 					synchronized (surfaceHolder) {
-
-						// Log.v("aa", "TA" + threadIsRunning + "" + go);
 						if (threadIsRunning) {
 							long currentTime = System.currentTimeMillis();
 							double elapsedTimeMS = currentTime - previousFrameTime;
-							// totalElapsedTime += elapsedTimeMS / 1000.00;
-							// updatePositions(elapsedTimeMS); // update game
-							// state
 							if (!do321)
 								update(canvas, elapsedTimeMS);
 							else
 								doing321(canvas, elapsedTimeMS);
-							// drawGameElements(canvas); // draw
-							previousFrameTime = currentTime; // update
-																// previous
-																// time
+							previousFrameTime = currentTime;
 						}
-						// go = true;
 					} // end synchronized block
 				} // end try
 				catch (Exception e) {
