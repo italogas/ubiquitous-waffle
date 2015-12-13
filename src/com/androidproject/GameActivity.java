@@ -267,16 +267,22 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 	Thread gaming = new Thread(new Runnable() {
 		public void run() {
+			boolean end = false;
 			while (true)
 				while (gameView != null)
 					while (gameView.Updater != null)
-						while (gameView.Updater.getRunning() || !gameView.gameOver) {
+						while (!end
+								&& (gameView.Updater.getRunning() || !gameView.gameOver
+										|| !gameView.Updater.getRunning() && gameView.playerLose
+												&& !gameView.playerLose2
+										|| !gameView.Updater.getRunning() && gameView.playerLose && gameView.playerLose2
+												&& mType == SERVER)) {
 							try {
 								Thread.sleep(200);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
-							boolean end = false;
+
 							// CHECK IF SOMEONE WON
 							if (mType == SERVER)
 								for (Player p : gameView.Players) {
@@ -306,7 +312,9 @@ public class GameActivity extends Activity implements SensorEventListener {
 									sending.append("THEEND:");
 
 									for (Player p : gameView.Players) {
-										p.score = (int) (p.distance * (0.77 + (((float) p.distance/(float)gameView.totalDistance) * 1.1234f) * 0.85));
+										p.score = (int) (p.distance * (0.77
+												+ (((float) p.distance / (float) gameView.totalDistance) * 1.1234f)
+														* 0.85));
 									}
 									for (Player p : gameView.Players) {
 										sending.append(p.device);
@@ -538,39 +546,43 @@ public class GameActivity extends Activity implements SensorEventListener {
 
 		@Override
 		public void run() {
+			boolean got = false;
+			while (serverList != null) {
+				try {
+					Thread.sleep(100);
 
-			if (serverList != null) {
-				while (serverList.Result == 0) {
-					try {
-						Thread.sleep(100);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				if(serverList!=null){
+				if (serverList.Result != 0) {
+					got = true;
+				}
+				}
+				if (got&&serverList!=null) {
+					if ((serverList.Result == Activity.RESULT_OK) && (serverList.ResultIntent != null)) {
+						String device = serverList.device;
 
-					} catch (Exception e) {
-						e.printStackTrace();
+						Log.v("connected", device);
+						int connectionStatus = mConnection.connect(device, dataReceivedListener, disconnectedListener);
+						if (connectionStatus != Connection.SUCCESS) {
+							
+							 //Looper.prepare();
+							//Toast.makeText(self, "Unable to connect; please try again.", Toast.LENGTH_SHORT).show();
+						} else {
+							rivalDevice = device;
+							runOnUiThread(new Runnable() {
+								public void run() {
+									waitingBar.setVisibility(View.VISIBLE);
+									textViewWaiting.setText("Waiting for player");
+									textViewWaiting.setVisibility(View.VISIBLE);
+								}
+							});
+
+						}
 					}
 
 				}
-
-				if ((serverList.Result == Activity.RESULT_OK) && (serverList.ResultIntent != null)) {
-					String device = serverList.device;
-
-					Log.v("connected", device);
-					int connectionStatus = mConnection.connect(device, dataReceivedListener, disconnectedListener);
-					if (connectionStatus != Connection.SUCCESS) {
-						Looper.prepare();
-						Toast.makeText(self, "Unable to connect; please try again.", Toast.LENGTH_SHORT).show();
-					} else {
-						rivalDevice = device;
-						runOnUiThread(new Runnable() {
-							public void run() {
-								waitingBar.setVisibility(View.VISIBLE);
-								textViewWaiting.setText("Waiting for player");
-								textViewWaiting.setVisibility(View.VISIBLE);
-							}
-						});
-
-					}
-				}
-
 			}
 		}
 	});

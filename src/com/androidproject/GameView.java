@@ -94,6 +94,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 	MediaPlayer mPlayer;
 
+	boolean playerLose;
+	boolean playerLose2=false;
+
 	public GameView(Context context, AttributeSet attrs) {
 		super(context, attrs); // call super's constructor
 		activity = (Activity) context;
@@ -269,6 +272,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		planePos.damaged = -1;
 		puckXVelocity = 0;
 		gameOver = false; // the game is not over
+		playerLose=false;
 		start();
 	} // end method newGame
 
@@ -358,7 +362,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 							if (planePos.damaged > 2) {
 								// Lose the game
 								planePos.damaged = 2;
+								playerLose=true;
 								gameOver = true;
+								endOfGame();
 							} else if (planePos.damaged < -1)
 								planePos.damaged = -1;
 
@@ -549,11 +555,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 		dialogBuilder.setCancelable(false);
 		String me = Players.get(0).device.toString();
 		Collections.sort(Players);
+		if(playerLose&&!playerLose2){
+			if(Players.size()>1){
+			dialogBuilder.setMessage("You lost the game! Waiting for other players.");// getResources().getString(R.string.results_format, shotsFired, totalElapsedTime));
+			playerLose2=true;
+			}else
+				dialogBuilder.setMessage("You lost the game!");// getResources().getString(R.string.results_format, shotsFired, totalElapsedTime));
+			
+		}else{
 		if (me.equals(Players.get(0).device))
 			dialogBuilder.setMessage("You won the game with a score of " + Players.get(0).score + "!!!");// getResources().getString(R.string.results_format, shotsFired, totalElapsedTime));
 		else
 			dialogBuilder
 					.setMessage(Players.get(0).name + " won the game with a score of " + Players.get(0).score + "!!!");// getResources().getString(R.string.results_format, shotsFired, totalElapsedTime));
+		}
 		dialogBuilder.setPositiveButton("Ok", // R.string.reset_game,
 				new DialogInterface.OnClickListener() {
 					// called when "Reset Game" Button is pressed
